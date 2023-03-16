@@ -2,15 +2,17 @@ package main
 
 import (
 	"fiber-apis/databases"
-	"fiber-apis/routes"
-	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
-	app := fiber.New()
+	//app := fiber.New()
 
-	databases.Connect(app)
-	routes.Setup(app)
+	err := databases.ConnectDB()
+	if err != nil {
+		panic(err.Error())
+	}
 
-	app.Listen(":5000")
+	//routes.Setup(app)
+
+	//app.Listen(":5000")
 }
