@@ -1,42 +1,52 @@
 package routes
 
 import (
-	"fiber-apis/databases"
 	"fiber-apis/models"
 	"github.com/gofiber/fiber/v2"
+	"log"
 )
 
-type User struct {
-	Username  string `json:"username"`
-	Firstname string `json:"first_name"`
-	Lastname  string `json:"last_name"`
-	Password  string `json:"password"`
+type UserResponse struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+	Email    string `json:"email, omitempty""`
 }
 
-func GetUserResponse(user models.User) User {
-	return User{Username: user.Username, Firstname: user.Firstname, Lastname: user.Lastname, Password: user.Password}
+func (user *UserResponse) GetUserModel() models.User {
+	return models.User{ID: 0, Login: user.Login, Password: user.Password, Email: user.Email, Status: models.UserStatus(models.Participant)}
 }
 
 func RegisterHandler(c *fiber.Ctx) error {
-	var user models.User
+	var user UserResponse
 
 	if err := c.BodyParser(&user); err != nil {
-		return c.Status(404).JSON("Bad user info")
+		return c.Status(400).JSON("")
 	}
-	databases.DataBase.Create(&user)
-	userResponse := GetUserResponse(user)
+	userModel := user.GetUserModel()
+	err := userModel.Register()
 
-	return c.Status(200).JSON(userResponse)
+	if err != nil {
+		return c.Status(400).JSON(err.Error())
+	}
+
+	///generate JWT
+	return c.Status(200).JSON("Register Successfull")
 }
 
-func ViewUsersHandler(c *fiber.Ctx) error {
-	var users []models.User
+func LoginUserHandler(c *fiber.Ctx) error {
+	var user UserResponse
 
-	databases.DataBase.Find(&users)
-	var usersResponse []User
-	for _, user := range users {
-		userResponse := GetUserResponse(user)
-		usersResponse = append(usersResponse, userResponse)
+	if err := c.BodyParser(&user); err != nil {
+		log.Fatal(string(c.Body()))
+		return c.Status(400).JSON("")
 	}
-	return c.Status(200).JSON(usersResponse)
+	userModel := user.GetUserModel()
+	err := userModel.LogIn()
+
+	if err != nil {
+		return c.Status(400).JSON(err.Error())
+	}
+
+	///generate JWT
+	return c.Status(200).JSON("Login successful")
 }
