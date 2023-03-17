@@ -9,10 +9,23 @@ import (
 type UserStatus int
 
 const (
-	Admin       UserStatus = 2
-	Coach       UserStatus = 1
-	Participant UserStatus = 0
+	Participant  UserStatus = 0
+	Coach        UserStatus = 1
+	Admin        UserStatus = 2
+	UnAuthorized UserStatus = 3
 )
+
+func GetStatus(statusId int) UserStatus {
+	switch statusId {
+	case 0:
+		return Participant
+	case 1:
+		return Coach
+	case 2:
+		return Admin
+	}
+	return UnAuthorized
+}
 
 type User struct {
 	ID       int        `json:"id"`
