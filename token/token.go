@@ -99,6 +99,22 @@ func Refresh(c *fiber.Ctx, signedToken string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	signedAccessToken := c.GetReqHeaders()["Authorization"]
+	if signedAccessToken == "" {
+		return "", errors.New("Headers haven't an access token")
+	}
+	claimsAccessToken, err := ValidateToken(signedAccessToken)
+
+	if err != nil && err.Error() != JWTErrTokenExpired.Error() {
+		return "", err
+	}
+	if err == nil {
+		if claims.User != claimsAccessToken.User {
+			return "", errors.New("User from access token and user from refresh token are different")
+		}
+		return signedAccessToken, nil
+	}
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Second * 20))
 
 	return GenerateAccessToken(c, *claims)
 }
