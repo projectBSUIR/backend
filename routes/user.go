@@ -50,7 +50,7 @@ func LoginUserHandler(c *fiber.Ctx) error {
 }
 
 func Authentificate(c *fiber.Ctx, userModel *models.User) error {
-	accessToken, err := token.GenerateAccessToken(c, token.GetJWTClaim(userModel, time.Now().Add(time.Second*20)))
+	accessToken, err := token.GenerateAccessToken(c, token.GetJWTClaim(userModel, time.Now().Add(time.Minute*5)))
 	if err != nil {
 		return err
 	}

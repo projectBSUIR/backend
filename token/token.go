@@ -114,7 +114,7 @@ func Refresh(c *fiber.Ctx, signedToken string) (string, error) {
 		}
 		return signedAccessToken, nil
 	}
-	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Second * 20))
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 5))
 
 	return GenerateAccessToken(c, *claims)
 }
