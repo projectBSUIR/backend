@@ -1,12 +1,22 @@
 package databases
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
+	"database/sql"
+	"fmt"
 )
 
-var DataBase *gorm.DB
+var DataBase *sql.DB
 
-func Connect(app *fiber.App) {
+var (
+	dbName = "mydb"
+	dbUser = "root"
+	dbPass = "password"
+	dbHost = "localhost"
+)
 
+func ConnectDB() error {
+	conn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8&parseTime=True&loc=Local", dbUser, dbPass, dbHost, "3306", dbName)
+	db, err := sql.Open("mysql", conn)
+	DataBase = db
+	return err
 }
