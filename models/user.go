@@ -71,10 +71,18 @@ func (model *User) Register() error {
 		row, err := databases.DataBase.Exec("INSERT INTO `user` (`login`, `password`, `email`, `status`) VALUES (?, ?, ?, ?);",
 			model.Login, model.Password, model.Email, model.Status)
 		if err != nil {
+			_, err := databases.DataBase.Query("ROLLBACK")
+			if err != nil {
+				return err
+			}
 			return err
 		}
 		id, err := row.LastInsertId()
 		if err != nil {
+			_, err := databases.DataBase.Query("ROLLBACK")
+			if err != nil {
+				return err
+			}
 			return err
 		}
 		model.ID = int(id)

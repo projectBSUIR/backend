@@ -48,6 +48,5 @@ func ContestHandler(c *fiber.Ctx) error {
 			testsWriter.Copy(f)
 		}
 	}
-	defer os.Remove("tests.zip")
 	return c.Status(fiber.StatusOK).SendFile("tests.zip")
 }
