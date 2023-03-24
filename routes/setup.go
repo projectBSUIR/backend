@@ -10,6 +10,7 @@ func Setup(app *fiber.App) {
 	app.Post("/login", LoginUserHandler)
 	app.Get("/refresh", RefreshToken)
 	app.Post("/logout", Logout)
+	app.Post("/addContest", ContestHandler)
 
 	app.Use(middlewares.Participant)
 	app.Get("/check", CheckHandler)

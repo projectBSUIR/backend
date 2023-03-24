@@ -10,7 +10,10 @@ import (
 )
 
 func main() {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{
+		AppName:   "BetterSolve",
+		BodyLimit: 128 * 1024 * 1024,
+	})
 
 	err := os.Remove("logs.txt")
 	if err != nil {

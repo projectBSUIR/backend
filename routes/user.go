@@ -37,13 +37,13 @@ func LoginUserHandler(c *fiber.Ctx) error {
 	var user UserResponse
 
 	if err := c.BodyParser(&user); err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
 	userModel := user.GetUserModel()
 	err := userModel.LogIn()
 
 	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	return Authentificate(c, &userModel)
