@@ -36,17 +36,17 @@ type User struct {
 }
 
 func (model *User) LogIn() error {
-	res, err := databases.DataBase.Query("SELECT count(*) FROM `user` WHERE `login` = ? AND `password` = ?", model.Login, model.Password)
+	res, err := databases.DataBase.Query("SELECT id, email, status FROM `user` WHERE `login` = ? AND `password` = ?", model.Login, model.Password)
 	if err != nil {
 		return err
 	}
-	var count int
-	res.Next()
-	err = res.Scan(&count)
-	if err != nil {
-		return err
+	var count int = 0
+	for res.Next() {
+		count++
+		if count == 1 {
+			res.Scan(&model.ID, &model.Email, &model.Status)
+		}
 	}
-
 	if count == 1 {
 		return nil
 	}

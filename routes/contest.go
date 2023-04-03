@@ -1,83 +1,124 @@
 package routes
 
 import (
-	"archive/zip"
-	"bytes"
+	"encoding/json"
+	"fiber-apis/models"
+	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
-	"io"
-	"os"
-	"strings"
+	"time"
 )
 
-func ContestHandler(c *fiber.Ctx) error {
-	fileHeader, err := c.FormFile("Contest")
+type ProblemData struct {
+	ContestId int `json:"contestId"`
+}
+
+func (problem *ProblemData) GetProblemModel(testSet []byte, properties fiber.Map, checker []byte) models.Problem {
+	return models.Problem{
+		Id:         0,
+		ContestId:  problem.ContestId,
+		TestSet:    testSet,
+		Properties: properties,
+		Checker:    checker,
+	}
+}
+
+type ContestData struct {
+	Name      string    `json:"name"`
+	StartTime time.Time `json:"start_time"`
+	Duration  int64     `json:"duration"`
+}
+
+func (contest *ContestData) GetContestModel() models.Contest {
+	//log.Println(contest.StartTime.Format("2006-01-02 15:04:05"))
+	return models.Contest{
+		Id:        0,
+		Name:      contest.Name,
+		StartTime: contest.StartTime.Format("2006-01-02 15:04:05"),
+		Duration:  contest.Duration,
+	}
+}
+
+func AddProblem(c *fiber.Ctx) error {
+	fileHeader, err := c.FormFile("Problem")
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
 	file, err := fileHeader.Open()
 	defer file.Close()
 
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
-	buf := new(bytes.Buffer)
+	files, err := zipper.ExtractAllInOrder(
+		file,
+		[]string{"/tests/", "/statements/russian/problem-properties.json", "/check.cpp"},
+		[]string{"tests.zip", "problem-properties.json", "checker.cpp"},
+	)
 
-	fileSize, err := io.Copy(buf, file)
 	if err != nil {
-		panic(err)
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	var problemData ProblemData
+
+	if err = c.BodyParser(&problemData); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
-	contestZip, err := zip.NewReader(bytes.NewReader(buf.Bytes()), fileSize)
+	var jsonProblemProperites fiber.Map
+
+	err = json.Unmarshal(files[1], jsonProblemProperites)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
-	zipFile, err := os.Create("D:/Projects/BSUIR/backend/temp/tests.zip")
+	problem := problemData.GetProblemModel(
+		files[0],
+		jsonProblemProperites,
+		files[1],
+	)
+
+	err = problem.Create()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
-	}
-	testsWriter := zip.NewWriter(zipFile)
-
-	for _, f := range contestZip.File {
-		if f.FileInfo().IsDir() {
-			continue
-		}
-		if strings.HasPrefix(f.Name, "tests/") {
-			err := CloneTest(f, testsWriter)
-			if err != nil {
-				testsWriter.Close()
-				zipFile.Close()
-				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
-			}
-		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
-	c.SendFile("D:/Projects/BSUIR/backend/temp/tests.zip")
-
-	testsWriter.Close()
-	zipFile.Close()
-	os.Remove("D:/Projects/BSUIR/backend/temp/")
 	return c.SendStatus(fiber.StatusOK)
 }
 
-func CloneTest(f *zip.File, testsWriter *zip.Writer) error {
-	test, err := f.Open()
-	if err != nil {
-		return err
-	}
-	defer test.Close()
-	nameTest, _ := strings.CutPrefix(f.Name, "tests/")
-	zipTest, err := testsWriter.Create(nameTest)
-	if err != nil {
-		return err
+func CreateContest(c *fiber.Ctx) error {
+	var contest ContestData
+
+	if err := c.BodyParser(&contest); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
 
-	_, err = io.Copy(zipTest, test)
+	contestModel := contest.GetContestModel()
+	err := contestModel.Create()
+
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
-	return nil
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"contestId": contestModel.Id,
+	})
 }
