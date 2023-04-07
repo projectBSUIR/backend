@@ -3,8 +3,10 @@ package routes
 import (
 	"encoding/json"
 	"fiber-apis/models"
+	"fiber-apis/token"
 	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
+	"strconv"
 	"time"
 )
 
@@ -29,7 +31,6 @@ type ContestData struct {
 }
 
 func (contest *ContestData) GetContestModel() models.Contest {
-	//log.Println(contest.StartTime.Format("2006-01-02 15:04:05"))
 	return models.Contest{
 		Id:        0,
 		Name:      contest.Name,
@@ -113,4 +114,54 @@ func CreateContest(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"contestId": contestModel.Id,
 	})
+}
+
+func ViewContests(c *fiber.Ctx) error {
+	contests, err := models.GetAllContests()
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"contests": contests,
+	})
+}
+
+func ViewProblems(c *fiber.Ctx) error {
+	contestId, err := strconv.Atoi(c.Params("contestId"))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	var contest models.Contest
+
+	err = contest.GetContest(contestId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	userStatus, err := token.GetUserStatus(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if !contest.NotStarted() || userStatus == models.Admin {
+		problems, err := models.GetProblemsFromContest(contestId)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": err.Error(),
+			})
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"problems": problems,
+		})
+	}
+
+	return c.SendStatus(fiber.StatusForbidden)
 }

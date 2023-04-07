@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fiber-apis/databases"
 	_ "github.com/go-sql-driver/mysql"
-	"log"
 )
 
 type UserStatus int
@@ -16,7 +15,7 @@ const (
 	UnAuthorized UserStatus = 3
 )
 
-func GetStatus(statusId int) UserStatus {
+func GetStatusById(statusId int) UserStatus {
 	switch statusId {
 	case 0:
 		return Participant
@@ -28,6 +27,19 @@ func GetStatus(statusId int) UserStatus {
 	return UnAuthorized
 }
 
+func GetStatusByString(statusString string) UserStatus {
+	switch statusString {
+	case "Participant":
+		return Participant
+	case "Coach":
+		return Coach
+	case "Admin":
+		return Admin
+	default:
+		return UnAuthorized
+	}
+}
+
 type User struct {
 	ID       int        `json:"id"`
 	Login    string     `json:"login"`
@@ -37,20 +49,7 @@ type User struct {
 }
 
 func (model *User) SetStatus(s string) {
-	switch s {
-	case "Participant":
-		model.Status = Participant
-		break
-	case "Coach":
-		model.Status = Coach
-		break
-	case "Admin":
-		model.Status = Admin
-		break
-	default:
-		model.Status = UnAuthorized
-		break
-	}
+	model.Status = GetStatusByString(s)
 }
 
 func (model *User) LogIn() error {
@@ -67,7 +66,6 @@ func (model *User) LogIn() error {
 		}
 	}
 	model.SetStatus(status)
-	log.Println(model)
 	if count == 1 {
 		return nil
 	}
