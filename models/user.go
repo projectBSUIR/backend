@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fiber-apis/databases"
 	_ "github.com/go-sql-driver/mysql"
+	"log"
 )
 
 type UserStatus int
@@ -35,18 +36,38 @@ type User struct {
 	Status   UserStatus `json:"status"`
 }
 
+func (model *User) SetStatus(s string) {
+	switch s {
+	case "Participant":
+		model.Status = Participant
+		break
+	case "Coach":
+		model.Status = Coach
+		break
+	case "Admin":
+		model.Status = Admin
+		break
+	default:
+		model.Status = UnAuthorized
+		break
+	}
+}
+
 func (model *User) LogIn() error {
 	res, err := databases.DataBase.Query("SELECT id, email, status FROM `user` WHERE `login` = ? AND `password` = ?", model.Login, model.Password)
 	if err != nil {
 		return err
 	}
 	var count int = 0
+	var status string
 	for res.Next() {
 		count++
 		if count == 1 {
-			res.Scan(&model.ID, &model.Email, &model.Status)
+			res.Scan(&model.ID, &model.Email, &status)
 		}
 	}
+	model.SetStatus(status)
+	log.Println(model)
 	if count == 1 {
 		return nil
 	}

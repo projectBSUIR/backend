@@ -12,7 +12,7 @@ type ProblemData struct {
 	ContestId int `json:"contestId"`
 }
 
-func (problem *ProblemData) GetProblemModel(testSet []byte, properties fiber.Map, checker []byte) models.Problem {
+func (problem *ProblemData) GetProblemModel(testSet []byte, properties []byte, checker []byte) models.Problem {
 	return models.Problem{
 		Id:         0,
 		ContestId:  problem.ContestId,
@@ -58,8 +58,8 @@ func AddProblem(c *fiber.Ctx) error {
 
 	files, err := zipper.ExtractAllInOrder(
 		file,
-		[]string{"/tests/", "/statements/russian/problem-properties.json", "/check.cpp"},
-		[]string{"tests.zip", "problem-properties.json", "checker.cpp"},
+		[]string{"tests/", "check.cpp", "statements/russian/problem-properties.json"},
+		[]string{"tests.zip", "checker.zip", "problem-properties.json"},
 	)
 
 	if err != nil {
@@ -68,25 +68,17 @@ func AddProblem(c *fiber.Ctx) error {
 		})
 	}
 	var problemData ProblemData
+	err = json.Unmarshal([]byte(c.FormValue("Contest")), &problemData)
 
-	if err = c.BodyParser(&problemData); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
-		})
-	}
-
-	var jsonProblemProperites fiber.Map
-
-	err = json.Unmarshal(files[1], jsonProblemProperites)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
 
 	problem := problemData.GetProblemModel(
 		files[0],
-		jsonProblemProperites,
+		files[2],
 		files[1],
 	)
 

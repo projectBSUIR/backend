@@ -4,7 +4,6 @@ import (
 	"fiber-apis/models"
 	"fiber-apis/token"
 	"github.com/gofiber/fiber/v2"
-	"log"
 )
 
 func Participant(c *fiber.Ctx) error {
@@ -78,11 +77,9 @@ func Admin(c *fiber.Ctx) error {
 	if refreshClaims.User != accessClaims.User {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
-
 	if accessClaims.Status != models.Admin {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 
-	log.Println("AAAAAA2")
 	return c.Next()
 }

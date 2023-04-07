@@ -2,15 +2,14 @@ package models
 
 import (
 	"fiber-apis/databases"
-	"github.com/gofiber/fiber/v2"
 )
 
 type Problem struct {
-	Id         int       `json:"id"`
-	ContestId  int       `json:"contestId"`
-	TestSet    []byte    `json:"testSet"`    //
-	Properties fiber.Map `json:"properties"` // Пока что не знаю правильно ли это
-	Checker    []byte    `json:"checker"`    //
+	Id         int    `json:"id"`
+	ContestId  int    `json:"contestId"`
+	TestSet    []byte `json:"testSet"`    //
+	Properties []byte `json:"properties"` // Пока что не знаю правильно ли это
+	Checker    []byte `json:"checker"`    //
 }
 
 func (problem *Problem) Create() error {
