@@ -7,78 +7,47 @@ import (
 )
 
 func Participant(c *fiber.Ctx) error {
-	signedAccessToken := c.GetReqHeaders()["Authorization"]
-	refreshToken := c.Cookies("refresh_token")
-
-	if refreshToken == "" {
-		return c.SendStatus(fiber.StatusUnauthorized)
-	}
-	accessClaims, err := token.ValidateToken(signedAccessToken)
+	userStatus, err := token.GetUserStatus(c)
 	if err != nil {
-		if err.Error() == token.JWTErrTokenExpired.Error() {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
 	}
-
-	refreshClaims, err := token.GetClaims(refreshToken)
-
-	if refreshClaims.User != accessClaims.User {
-		return c.SendStatus(fiber.StatusForbidden)
+	if userStatus == models.UnAuthorized {
+		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
 	return c.Next()
 }
 
 func Coach(c *fiber.Ctx) error {
-	signedAccessToken := c.GetReqHeaders()["Authorization"]
-	refreshToken := c.Cookies("refresh_token")
-
-	if refreshToken == "" {
+	userStatus, err := token.GetUserStatus(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if userStatus == models.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	accessClaims, err := token.ValidateToken(signedAccessToken)
-	if err != nil {
-		if err.Error() == token.JWTErrTokenExpired.Error() {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
-	}
-
-	refreshClaims, err := token.GetClaims(refreshToken)
-
-	if refreshClaims.User != accessClaims.User {
+	if userStatus < models.Admin {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 
-	if accessClaims.Status < models.Admin {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
 	return c.Next()
 }
 
 func Admin(c *fiber.Ctx) error {
-	signedAccessToken := c.GetReqHeaders()["Authorization"]
-	refreshToken := c.Cookies("refresh_token")
-
-	if refreshToken == "" {
+	userStatus, err := token.GetUserStatus(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if userStatus == models.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	accessClaims, err := token.ValidateToken(signedAccessToken)
-	if err != nil {
-		if err.Error() == token.JWTErrTokenExpired.Error() {
-			return c.SendStatus(fiber.StatusUnauthorized)
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
-	}
-
-	refreshClaims, err := token.GetClaims(refreshToken)
-
-	if refreshClaims.User != accessClaims.User {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
-
-	if accessClaims.Status != models.Admin {
+	if userStatus != models.Admin {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 

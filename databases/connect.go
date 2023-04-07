@@ -8,7 +8,7 @@ import (
 var DataBase *sql.DB
 
 var (
-	dbName = "mydb"
+	dbName = "backend"
 	dbUser = "root"
 	dbPass = "password"
 	dbHost = "localhost"

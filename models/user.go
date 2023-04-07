@@ -15,7 +15,7 @@ const (
 	UnAuthorized UserStatus = 3
 )
 
-func GetStatus(statusId int) UserStatus {
+func GetStatusById(statusId int) UserStatus {
 	switch statusId {
 	case 0:
 		return Participant
@@ -27,6 +27,19 @@ func GetStatus(statusId int) UserStatus {
 	return UnAuthorized
 }
 
+func GetStatusByString(statusString string) UserStatus {
+	switch statusString {
+	case "Participant":
+		return Participant
+	case "Coach":
+		return Coach
+	case "Admin":
+		return Admin
+	default:
+		return UnAuthorized
+	}
+}
+
 type User struct {
 	ID       int        `json:"id"`
 	Login    string     `json:"login"`
@@ -35,18 +48,24 @@ type User struct {
 	Status   UserStatus `json:"status"`
 }
 
-func (model *User) LogIn() error {
-	res, err := databases.DataBase.Query("SELECT count(*) FROM `user` WHERE `login` = ? AND `password` = ?", model.Login, model.Password)
-	if err != nil {
-		return err
-	}
-	var count int
-	res.Next()
-	err = res.Scan(&count)
-	if err != nil {
-		return err
-	}
+func (model *User) SetStatus(s string) {
+	model.Status = GetStatusByString(s)
+}
 
+func (model *User) LogIn() error {
+	res, err := databases.DataBase.Query("SELECT id, email, status FROM `user` WHERE `login` = ? AND `password` = ?", model.Login, model.Password)
+	if err != nil {
+		return err
+	}
+	var count int = 0
+	var status string
+	for res.Next() {
+		count++
+		if count == 1 {
+			res.Scan(&model.ID, &model.Email, &status)
+		}
+	}
+	model.SetStatus(status)
 	if count == 1 {
 		return nil
 	}
@@ -71,10 +90,18 @@ func (model *User) Register() error {
 		row, err := databases.DataBase.Exec("INSERT INTO `user` (`login`, `password`, `email`, `status`) VALUES (?, ?, ?, ?);",
 			model.Login, model.Password, model.Email, model.Status)
 		if err != nil {
+			_, err := databases.DataBase.Query("ROLLBACK")
+			if err != nil {
+				return err
+			}
 			return err
 		}
 		id, err := row.LastInsertId()
 		if err != nil {
+			_, err := databases.DataBase.Query("ROLLBACK")
+			if err != nil {
+				return err
+			}
 			return err
 		}
 		model.ID = int(id)

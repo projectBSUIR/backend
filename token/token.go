@@ -118,3 +118,26 @@ func Refresh(c *fiber.Ctx, signedToken string) (string, error) {
 
 	return GenerateAccessToken(c, *claims)
 }
+
+func GetUserStatus(c *fiber.Ctx) (models.UserStatus, error) {
+	signedAccessToken := c.GetReqHeaders()["Authorization"]
+	refreshToken := c.Cookies("refresh_token")
+
+	if refreshToken == "" {
+		return models.UnAuthorized, nil
+	}
+	accessClaims, err := ValidateToken(signedAccessToken)
+	if err != nil {
+		if err.Error() == JWTErrTokenExpired.Error() {
+			return models.UnAuthorized, nil
+		}
+		return models.UnAuthorized, err
+	}
+
+	refreshClaims, err := GetClaims(refreshToken)
+	if refreshClaims.User != accessClaims.User {
+		return models.UnAuthorized, errors.New("Wrong Access Token")
+	}
+
+	return refreshClaims.Status, nil
+}
