@@ -15,6 +15,7 @@ func Setup(app *fiber.App) {
 
 	app.Use(middlewares.Participant)
 	app.Get("/check", CheckHandler)
+	app.Post("/submit", SubmitSolution)
 
 	app.Use(middlewares.Admin)
 	app.Post("/addProblem", AddProblem)

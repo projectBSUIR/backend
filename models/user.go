@@ -41,7 +41,7 @@ func GetStatusByString(statusString string) UserStatus {
 }
 
 type User struct {
-	ID       int        `json:"id"`
+	ID       int64      `json:"id"`
 	Login    string     `json:"login"`
 	Password string     `json:"password"`
 	Email    string     `json:"email"`
@@ -104,7 +104,7 @@ func (model *User) Register() error {
 			}
 			return err
 		}
-		model.ID = int(id)
+		model.ID = id
 	}
 	return nil
 }

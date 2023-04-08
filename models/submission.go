@@ -2,6 +2,7 @@ package models
 
 import (
 	"fiber-apis/databases"
+	"time"
 )
 
 type SubmissionInfo struct {
@@ -21,26 +22,32 @@ type Submission struct {
 	UserId     int64  `json:"user_id"`
 }
 
+func (submission *Submission) SetDefaultValues() {
+	submission.Verdict = "Pending"
+	submission.SubmitTime = time.Now().Format(time.RFC3339)
+}
+
 func (submission *Submission) Create() error {
-	row, err := databases.DataBase.Exec("INSERT INTO `submission` "+
-		"(`id`, `solution`, `submit_time`, `verdict`, `problem_id`, `user_id`) "+
-		"VALUES (?, ?, ?, ?, ?, ?)",
+	row, err := databases.DataBase.Exec("INSERT INTO `submission` (`id`, `solution`, `submit_time`, `verdict`, `problem_id`, `user_id`) VALUES (?, ?, ?, ?, ?, ?)",
 		submission.Id, submission.Solution, submission.SubmitTime,
 		submission.Verdict, submission.ProblemId, submission.UserId)
 
 	if err != nil {
+		var prevErr error = err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
-		return err
+		return prevErr
 	}
 	id, err := row.LastInsertId()
 	if err != nil {
+		var prevErr error = err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
+		return prevErr
 	}
 	submission.Id = id
 	return nil
@@ -99,11 +106,12 @@ func GetSolutionBySubmissionId(submissionId int64) ([]byte, error) {
 func UpdateSubmissionVerdict(submissionId int64, newVerdict string) error {
 	_, err := databases.DataBase.Exec("UPDATE `submission` SET `verdict`=? WHERE `id`=?", newVerdict, submissionId)
 	if err != nil {
+		var prevErr error = err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
-		return err
+		return prevErr
 	}
 	return nil
 }

@@ -14,6 +14,7 @@ var JWTErrTokenExpired = errors.New("Token is expired")
 var jwtKey = []byte("secret")
 
 type JWTClaim struct {
+	Id     int64             `json:"id"`
 	User   string            `json:"user"`
 	Status models.UserStatus `json:"status"`
 	jwt.RegisteredClaims
@@ -30,6 +31,7 @@ func SetRefreshTokenCookie(c *fiber.Ctx, refreshToken string, expiresAt time.Tim
 
 func GetJWTClaim(model *models.User, expirationTime time.Time) JWTClaim {
 	return JWTClaim{
+		Id:     model.ID,
 		User:   model.Login,
 		Status: model.Status,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -140,4 +142,19 @@ func GetUserStatus(c *fiber.Ctx) (models.UserStatus, error) {
 	}
 
 	return refreshClaims.Status, nil
+}
+
+func GetUserId(c *fiber.Ctx) (int64, error) {
+	refreshToken := c.Cookies("refresh_token")
+
+	if refreshToken == "" {
+		return 0, errors.New("refresh_token is expired")
+	}
+
+	refreshClaims, err := GetClaims(refreshToken)
+	if err != nil {
+		return 0, err
+	}
+
+	return refreshClaims.Id, nil
 }
