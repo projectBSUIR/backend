@@ -23,19 +23,21 @@ func (contest *Contest) Create() error {
 	row, err := databases.DataBase.Exec("INSERT INTO `contest` (`contest_name`, `start_time`, `duration`) VALUES (?, ?, ?)",
 		contest.Name, contest.StartTime, contest.Duration) // Надо проверить как оно здесь записывает дату и время
 	if err != nil {
+		var prevErr error = err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
-		return err
+		return prevErr
 	}
 	id, err := row.LastInsertId()
 	if err != nil {
+		var prevErr error = err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
-		return err
+		return prevErr
 	}
 	contest.Id = int(id)
 	return nil
