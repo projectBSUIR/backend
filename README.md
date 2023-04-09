@@ -1,4 +1,5 @@
-# Getting started
+# BetterSolve API
 
-## Install Go with latest version 
-![Link](https://go.dev/doc/install)
+  ## Скачивание последней версии Go
+
+  [тык](https://go.dev/doc/install)
