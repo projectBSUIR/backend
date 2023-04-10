@@ -3,14 +3,20 @@ package models
 import (
 	"fiber-apis/databases"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gofiber/fiber/v2"
 	"time"
 )
 
 type Contest struct {
-	Id        int    `json:"id"`
+	Id        int64  `json:"id"`
 	Name      string `json:"name"`
 	StartTime string `json:"start_time"`
 	Duration  int64  `json:"duration"`
+}
+
+type ContestInfo struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
 }
 
 func (contest *Contest) NotStarted() bool {
@@ -19,31 +25,40 @@ func (contest *Contest) NotStarted() bool {
 	return timeNow.Before(startTimeContest)
 }
 
-func (contest *Contest) Create() error {
+func (contest *Contest) Create(c *fiber.Ctx) (ContestInfo, error) {
 	row, err := databases.DataBase.Exec("INSERT INTO `contest` (`contest_name`, `start_time`, `duration`) VALUES (?, ?, ?)",
 		contest.Name, contest.StartTime, contest.Duration) // Надо проверить как оно здесь записывает дату и время
 	if err != nil {
-		var prevErr error = err
+		prevErr := err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
-			return err
+			return ContestInfo{}, err
 		}
-		return prevErr
+		return ContestInfo{}, prevErr
 	}
 	id, err := row.LastInsertId()
 	if err != nil {
-		var prevErr error = err
+		prevErr := err
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
-			return err
+			return ContestInfo{}, err
 		}
-		return prevErr
+		return ContestInfo{}, prevErr
 	}
-	contest.Id = int(id)
-	return nil
+	contest.Id = id
+	err = setAuthorOfContest(contest.Id, c)
+	if err != nil {
+		prevErr := err
+		_, err := databases.DataBase.Query("ROLLBACK")
+		if err != nil {
+			return ContestInfo{}, err
+		}
+		return ContestInfo{}, prevErr
+	}
+	return ContestInfo{Id: contest.Id, Name: contest.Name}, nil
 }
 
-func GetAllContests() ([]Contest, error) {
+func FetchAllContests() ([]Contest, error) {
 	rows, err := databases.DataBase.Query("SELECT * FROM `contest`")
 	if err != nil {
 		_, err := databases.DataBase.Query("ROLLBACK")
@@ -61,7 +76,7 @@ func GetAllContests() ([]Contest, error) {
 	return contests, nil
 }
 
-func (contest *Contest) GetContest(contestId int) error {
+func (contest *Contest) FetchContest(contestId int) error {
 	row, err := databases.DataBase.Query("SELECT `contest_name`, `start_time`, `duration` FROM `contest` WHERE id = ?", contestId)
 	if err != nil {
 		return err
@@ -74,4 +89,21 @@ func (contest *Contest) GetContest(contestId int) error {
 	}
 
 	return nil
+}
+
+func FetchAllContestsForAuthor(userId int64) ([]ContestInfo, error) {
+	rows, err := databases.DataBase.Query("SELECT `id`, `name` FROM `contest` WHERE `id` IN (SELECT `contest_id` FROM `contestAuthor` WHERE `user_id`=?)", userId)
+	if err != nil {
+		return nil, err
+	}
+	var contests []ContestInfo
+	for rows.Next() {
+		var contestInfo ContestInfo
+		err = rows.Scan(&contestInfo.Id, &contestInfo.Name)
+		if err != nil {
+			return nil, err
+		}
+		contests = append(contests, contestInfo)
+	}
+	return contests, nil
 }
