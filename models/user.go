@@ -48,6 +48,10 @@ type User struct {
 	Status   UserStatus `json:"status"`
 }
 
+type UserInfo struct {
+	Id int64 `json:"id"`
+}
+
 func (model *User) SetStatus(s string) {
 	model.Status = GetStatusByString(s)
 }
@@ -105,6 +109,19 @@ func (model *User) Register() error {
 			return err
 		}
 		model.ID = id
+	}
+	return nil
+}
+
+func UpdateStatus(userId int64, status UserStatus) error {
+	_, err := databases.DataBase.Exec("UPDATE `user` SET `status`=? WHERE `id`=?", status, userId)
+	if err != nil {
+		prevErr := err
+		_, err := databases.DataBase.Query("ROLLBACK")
+		if err != nil {
+			return err
+		}
+		return prevErr
 	}
 	return nil
 }

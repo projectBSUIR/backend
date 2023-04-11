@@ -103,7 +103,7 @@ func CreateContest(c *fiber.Ctx) error {
 	}
 
 	contestModel := contest.GetContestModel()
-	err := contestModel.Create()
+	contestInfo, err := contestModel.Create(c)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -111,13 +111,11 @@ func CreateContest(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"contestId": contestModel.Id,
-	})
+	return c.Status(fiber.StatusOK).JSON(contestInfo)
 }
 
 func ViewContests(c *fiber.Ctx) error {
-	contests, err := models.GetAllContests()
+	contests, err := models.FetchAllContests()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
@@ -138,7 +136,7 @@ func ViewProblems(c *fiber.Ctx) error {
 	}
 	var contest models.Contest
 
-	err = contest.GetContest(contestId)
+	err = contest.FetchContest(contestId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
