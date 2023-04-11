@@ -6,18 +6,22 @@ import (
 )
 
 func Setup(app *fiber.App) {
-	app.Post("/register", RegisterHandler)
 	app.Post("/login", LoginUserHandler)
 	app.Post("/logout", Logout)
-	app.Get("/refresh", RefreshToken)
+	app.Post("/register", RegisterHandler)
 	app.Get("/contests", ViewContests)
 	app.Get("/contest/:contestId", ViewProblems)
+	app.Get("/refresh", RefreshToken)
 
 	app.Use(middlewares.Participant)
 	app.Get("/check", CheckHandler)
 	app.Post("/submit", SubmitSolution)
+	app.Get("/ownContests", GetContests)
+
+	app.Use(middlewares.Coach)
+	app.Post("/createContest", CreateContest)
+	app.Post("/addProblem", AddProblem)
 
 	app.Use(middlewares.Admin)
-	app.Post("/addProblem", AddProblem)
-	app.Post("/createContest", CreateContest)
+	app.Post("/setCoach", SetCoach)
 }
