@@ -3,6 +3,7 @@ package routes
 import (
 	"fiber-apis/models"
 	"fiber-apis/token"
+	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 	"time"
 )
@@ -14,7 +15,7 @@ type UserResponse struct {
 }
 
 func (user *UserResponse) GetUserModel() models.User {
-	return models.User{ID: 0, Login: user.Login, Password: user.Password, Email: user.Email, Status: models.Participant}
+	return models.User{ID: 0, Login: user.Login, Password: user.Password, Email: user.Email, Status: types.Participant}
 }
 
 func RegisterHandler(c *fiber.Ctx) error {
@@ -50,11 +51,11 @@ func LoginUserHandler(c *fiber.Ctx) error {
 }
 
 func Authentificate(c *fiber.Ctx, userModel *models.User) error {
-	accessToken, err := token.GenerateAccessToken(c, token.GetJWTClaim(userModel, time.Now().Add(time.Minute*5)))
+	accessToken, err := token.GenerateAccessToken(c, models.GetJWTClaim(userModel, time.Now().Add(time.Minute*5)))
 	if err != nil {
 		return err
 	}
-	err = token.GenerateRefreshToken(c, token.GetJWTClaim(userModel, time.Now().Add(time.Hour*72)))
+	err = token.GenerateRefreshToken(c, models.GetJWTClaim(userModel, time.Now().Add(time.Hour*72)))
 	if err != nil {
 		return err
 	}

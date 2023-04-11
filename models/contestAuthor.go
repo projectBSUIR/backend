@@ -2,7 +2,6 @@ package models
 
 import (
 	"fiber-apis/databases"
-	"fiber-apis/token"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -13,7 +12,7 @@ type ContestAuthor struct {
 }
 
 func setAuthorOfContest(contestId int64, c *fiber.Ctx) error {
-	id, err := token.GetUserId(c)
+	id, err := GetUserId(c)
 	if err != nil {
 		return err
 	}

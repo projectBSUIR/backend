@@ -3,7 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fiber-apis/models"
-	"fiber-apis/token"
+	"fiber-apis/types"
 	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
 	"strconv"
@@ -143,13 +143,13 @@ func ViewProblems(c *fiber.Ctx) error {
 		})
 	}
 
-	userStatus, err := token.GetUserStatus(c)
+	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
-	if !contest.NotStarted() || userStatus == models.Admin {
+	if !contest.NotStarted() || userStatus == types.Admin {
 		problems, err := models.GetProblemsFromContest(contestId)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

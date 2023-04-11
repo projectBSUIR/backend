@@ -3,7 +3,6 @@ package routes
 import (
 	"bytes"
 	"fiber-apis/models"
-	"fiber-apis/token"
 	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
@@ -40,7 +39,7 @@ func SubmitSolution(c *fiber.Ctx) error {
 
 	var submission models.Submission
 	submission.Solution = buf.Bytes()
-	submission.UserId, err = token.GetUserId(c)
+	submission.UserId, err = models.GetUserId(c)
 	if err != nil {
 		if err.Error() == "refresh_token is expired" {
 			return c.SendStatus(fiber.StatusUnauthorized)

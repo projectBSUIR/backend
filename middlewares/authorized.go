@@ -2,18 +2,18 @@ package middlewares
 
 import (
 	"fiber-apis/models"
-	"fiber-apis/token"
+	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 )
 
 func Participant(c *fiber.Ctx) error {
-	userStatus, err := token.GetUserStatus(c)
+	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
-	if userStatus == models.UnAuthorized {
+	if userStatus == types.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 
@@ -21,16 +21,16 @@ func Participant(c *fiber.Ctx) error {
 }
 
 func Coach(c *fiber.Ctx) error {
-	userStatus, err := token.GetUserStatus(c)
+	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
-	if userStatus == models.UnAuthorized {
+	if userStatus == types.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	if userStatus < models.Admin {
+	if userStatus < types.Admin {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 
@@ -38,16 +38,16 @@ func Coach(c *fiber.Ctx) error {
 }
 
 func Admin(c *fiber.Ctx) error {
-	userStatus, err := token.GetUserStatus(c)
+	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
-	if userStatus == models.UnAuthorized {
+	if userStatus == types.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	if userStatus != models.Admin {
+	if userStatus != types.Admin {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 
