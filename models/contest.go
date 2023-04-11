@@ -27,7 +27,7 @@ func (contest *Contest) NotStarted() bool {
 
 func (contest *Contest) Create(c *fiber.Ctx) (ContestInfo, error) {
 	row, err := databases.DataBase.Exec("INSERT INTO `contest` (`contest_name`, `start_time`, `duration`) VALUES (?, ?, ?)",
-		contest.Name, contest.StartTime, contest.Duration) // Надо проверить как оно здесь записывает дату и время
+		contest.Name, contest.StartTime, contest.Duration)
 	if err != nil {
 		prevErr := err
 		_, err := databases.DataBase.Query("ROLLBACK")
