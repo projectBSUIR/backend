@@ -59,7 +59,6 @@ func (model *User) LogIn() error {
 }
 
 func (model *User) Register() error {
-	model.SetStatus("Participant")
 	res, err := databases.DataBase.Query("SELECT count(*) FROM `user` WHERE `login` = ?", model.Login)
 	if err != nil {
 		return err
@@ -77,17 +76,17 @@ func (model *User) Register() error {
 		row, err := databases.DataBase.Exec("INSERT INTO `user` (`login`, `password`, `email`, `status`) VALUES (?, ?, ?, ?);",
 			model.Login, model.Password, model.Email, model.Status)
 		if err != nil {
-			_, nerr := databases.DataBase.Query("ROLLBACK")
-			if nerr != nil {
-				return nerr
+			_, err := databases.DataBase.Query("ROLLBACK")
+			if err != nil {
+				return err
 			}
 			return err
 		}
 		id, err := row.LastInsertId()
 		if err != nil {
-			_, nerr := databases.DataBase.Query("ROLLBACK")
-			if nerr != nil {
-				return nerr
+			_, err := databases.DataBase.Query("ROLLBACK")
+			if err != nil {
+				return err
 			}
 			return err
 		}
@@ -124,4 +123,18 @@ func GetUserId(c *fiber.Ctx) (int64, error) {
 	}
 
 	return userInfo.Id, nil
+}
+
+func GetLoginById(userId int64) (string, error) {
+	var login string
+	log, err := databases.DataBase.Query("SELECT `login` FROM `user` WHERE `id`= ?", userId)
+	if err != nil {
+		return "", err
+	}
+	log.Next()
+	err = log.Scan(&login)
+	if err != nil {
+		return "", err
+	}
+	return login, nil
 }

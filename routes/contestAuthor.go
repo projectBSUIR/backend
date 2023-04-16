@@ -8,7 +8,6 @@ import (
 
 func GetContests(c *fiber.Ctx) error {
 	userId, err := models.GetUserId(c)
-
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),

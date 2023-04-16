@@ -12,6 +12,7 @@ func Setup(app *fiber.App) {
 	app.Get("/contests", ViewContests)
 	app.Get("/contest/:contestId", ViewProblems)
 	app.Get("/refresh", RefreshToken)
+	app.Get("/standings", GetResultsTable)
 
 	app.Use(middlewares.Participant)
 	app.Get("/check", CheckHandler)

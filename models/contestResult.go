@@ -2,7 +2,6 @@ package models
 
 import (
 	"fiber-apis/databases"
-	"github.com/gofiber/fiber/v2"
 )
 
 type ContestResult struct {
@@ -13,18 +12,15 @@ type ContestResult struct {
 	ContestId      int `json:"contest_id"`
 }
 
-func GetUserContestResult(ContestId int, c *fiber.Ctx) (ContestResult, error) {
+func GetUserContestResult(userId int64, contestId int64) (ContestResult, error) {
 	var resModel ContestResult
-	UserId, err := GetUserId(c)
+	res, err := databases.DataBase.Query("SELECT * FROM `contestResult` WHERE `user_id`= ? AND `contest_id`= ?", userId, contestId)
 	if err != nil {
-		return resModel, err
-	}
-	res, err := databases.DataBase.Query("SELECT * FROM `contest_result` WHERE `user_id`= ? AND `contest_id`= ?", UserId, ContestId)
-	if err != nil {
-		_, err := databases.DataBase.Query("ROLLBACK")
-		if err != nil {
-			return resModel, err
+		_, nerr := databases.DataBase.Query("ROLLBACK")
+		if nerr != nil {
+			return resModel, nerr
 		}
+		return resModel, err
 	}
 	res.Next()
 	err = res.Scan(&resModel.Id, &resModel.SolvedProblems, &resModel.Penalty, &resModel.UserId, &resModel.ContestId)
