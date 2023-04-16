@@ -37,3 +37,20 @@ func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, er
 	}
 	return result, nil
 }
+
+func GetProblemsStatus(userId int64, contestId int64) ([]int, error) {
+	var result []int
+	res, err := databases.DataBase.Query("SELECT `result` FROM `userProblemResult` WHERE `user_id`= ?, `contestId`= ?", userId, contestId)
+	if err != nil {
+		return nil, err
+	}
+	for res.Next() {
+		var r int
+		err := res.Scan(&r)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, r)
+	}
+	return result, nil
+}
