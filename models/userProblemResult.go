@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"fiber-apis/databases"
 	"github.com/gofiber/fiber/v2"
 )
@@ -12,6 +13,11 @@ type UserProblemResult struct {
 	LastAttempt   string `json:"last_attempt"`
 	UserId        int    `json:"user_id"`
 	ContestId     int    `json:"contest_id"`
+}
+
+type ProblemResultInfo struct {
+	Result      int64        `json:"result"`
+	LastAttempt sql.NullTime `json:"last_attempt,omitempty"`
 }
 
 func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, error) {
@@ -38,15 +44,15 @@ func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, er
 	return result, nil
 }
 
-func GetProblemsStatus(userId int64, contestId int64) ([]int, error) {
-	var result []int
-	res, err := databases.DataBase.Query("SELECT `result` FROM `userProblemResult` WHERE `user_id`= ?, `contestId`= ?", userId, contestId)
+func GetProblemsStatus(userId int64, contestId int64) ([]ProblemResultInfo, error) {
+	var result []ProblemResultInfo
+	res, err := databases.DataBase.Query("SELECT `result`, `last_attempt` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
 	if err != nil {
 		return nil, err
 	}
 	for res.Next() {
-		var r int
-		err := res.Scan(&r)
+		var r ProblemResultInfo
+		err := res.Scan(&r.Result, &r.LastAttempt)
 		if err != nil {
 			return nil, err
 		}

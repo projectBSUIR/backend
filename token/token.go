@@ -120,7 +120,7 @@ func GetClaimsFromTokens(c *fiber.Ctx) (*JWTClaim, error) {
 	accessClaims, err := ValidateToken(signedAccessToken)
 	if err != nil {
 		if err.Error() == JWTErrTokenExpired.Error() {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}

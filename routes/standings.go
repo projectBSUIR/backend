@@ -6,10 +6,10 @@ import (
 )
 
 type UserResult struct {
-	Login          string `json:"login"`
-	ContestResult  int    `json:"contest_result"`
-	Penalty        int    `json:"penalty"`
-	ProblemsResult []int  `json:"problems_result"`
+	Login          string                     `json:"login"`
+	ContestResult  int                        `json:"contest_result"`
+	Penalty        int                        `json:"penalty"`
+	ProblemsResult []models.ProblemResultInfo `json:"problems_result"`
 }
 
 func CreateTable(contestId int64) ([]UserResult, error) {

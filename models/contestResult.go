@@ -14,12 +14,13 @@ type ContestResult struct {
 
 func GetUserContestResult(userId int64, contestId int64) (ContestResult, error) {
 	var resModel ContestResult
-	res, err := databases.DataBase.Query("SELECT * FROM `contest_result` WHERE `user_id`= ? AND `contest_id`= ?", userId, contestId)
+	res, err := databases.DataBase.Query("SELECT * FROM `contestResult` WHERE `user_id`= ? AND `contest_id`= ?", userId, contestId)
 	if err != nil {
-		_, err := databases.DataBase.Query("ROLLBACK")
-		if err != nil {
-			return resModel, err
+		_, nerr := databases.DataBase.Query("ROLLBACK")
+		if nerr != nil {
+			return resModel, nerr
 		}
+		return resModel, err
 	}
 	res.Next()
 	err = res.Scan(&resModel.Id, &resModel.SolvedProblems, &resModel.Penalty, &resModel.UserId, &resModel.ContestId)
