@@ -2,7 +2,6 @@ package models
 
 import (
 	"fiber-apis/databases"
-	"fiber-apis/token"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,7 +16,7 @@ type UserProblemResult struct {
 
 func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, error) {
 	var result []UserProblemResult
-	UserId, err := token.GetUserId(c)
+	UserId, err := GetUserId(c)
 	if err != nil {
 		return result, err
 	}
