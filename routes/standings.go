@@ -12,7 +12,7 @@ type UserResult struct {
 	ProblemsResult []int  `json:"problems_result"`
 }
 
-func CreateTable(contestId int64, c *fiber.Ctx) ([]UserResult, error) {
+func CreateTable(contestId int64) ([]UserResult, error) {
 	var table []UserResult
 	contestParticipants, err := models.GetParticipantsIds(contestId)
 	if err != nil {
@@ -49,7 +49,7 @@ func GetResultsTable(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	table, err := CreateTable(contestId, c)
+	table, err := CreateTable(contestId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),

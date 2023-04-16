@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"fiber-apis/databases"
 	"fiber-apis/models"
 	"fiber-apis/types"
 	"fiber-apis/zipper"
@@ -162,4 +163,21 @@ func ViewProblems(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusForbidden)
+}
+
+func GetParticipantsIds(contestId int64) ([]int64, error) {
+	var participantsIds []int64
+	res, err := databases.DataBase.Query("SELECT `user_id` FROM `contestResult` WHERE `contest_id`= ?", contestId)
+	if err != nil {
+		return nil, err
+	}
+	for res.Next() {
+		var id int64
+		err := res.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		participantsIds = append(participantsIds, id)
+	}
+	return participantsIds, nil
 }
