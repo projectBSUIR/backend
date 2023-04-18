@@ -77,7 +77,7 @@ func SubmitSolution(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	err = models.AddUserProblemResultIfNotExists(submission.UserId, submission.ProblemId)
+	err = models.AddUserProblemResultIfNotExists(submission.UserId, submission.ProblemId, submission.SubmitTime)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),

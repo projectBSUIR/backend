@@ -62,15 +62,17 @@ func GetProblemsStatus(userId int64, contestId int64) ([]ProblemResultInfo, erro
 }
 
 func (userProblemResult *UserProblemResult) Exists() (bool, error) {
-	res, err := databases.DataBase.Query("SELECT count(*) FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id`= ?", userProblemResult.UserId, userProblemResult.ProblemId)
+	res, err := databases.DataBase.Query("SELECT `id`, `result`, `attempts_count` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id`= ?", userProblemResult.UserId, userProblemResult.ProblemId)
 	if err != nil {
 		return false, err
 	}
 	var count int64
-	res.Next()
-	err = res.Scan(&count)
-	if err != nil {
-		return false, err
+	for res.Next() {
+		count++
+		err = res.Scan(&userProblemResult.Id, &userProblemResult.Result, &userProblemResult.AttemptsCount)
+		if err != nil {
+			return false, err
+		}
 	}
 	return count == 1, nil
 }
@@ -99,12 +101,30 @@ func (userProblemResult *UserProblemResult) Create() error {
 	return nil
 }
 
-func AddUserProblemResultIfNotExists(userId int64, problemId int64) error {
+func (userProblemResult *UserProblemResult) AddAttempt() error {
+	if userProblemResult.Result == 1 {
+		return nil
+	}
+	userProblemResult.AttemptsCount++
+	_, err := databases.DataBase.Exec("UPDATE `userProblemResult` SET `last_attempt`=?, `attempts_count`=? WHERE `user_id`=? AND `problem_id`=?",
+		userProblemResult.LastAttempt, userProblemResult.AttemptsCount,
+		userProblemResult.UserId, userProblemResult.ProblemId)
+	if err != nil {
+		_, nerr := databases.DataBase.Query("ROLLBACK")
+		if nerr != nil {
+			return nerr
+		}
+		return err
+	}
+	return nil
+}
+
+func AddUserProblemResultIfNotExists(userId int64, problemId int64, last_attempt string) error {
 	userProblemResult := UserProblemResult{
 		Id:            0,
 		Result:        0,
 		AttemptsCount: 0,
-		LastAttempt:   "2006-01-02 15:04:05",
+		LastAttempt:   last_attempt,
 		UserId:        userId,
 		ProblemId:     problemId,
 	}
@@ -115,9 +135,10 @@ func AddUserProblemResultIfNotExists(userId int64, problemId int64) error {
 	}
 	if !exists {
 		err = userProblemResult.Create()
-		if err != nil {
-			return err
-		}
+		return err
+	} else {
+		err = userProblemResult.AddAttempt()
+		return err
 	}
 	return nil
 }

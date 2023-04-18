@@ -61,9 +61,11 @@ func (contestResult *ContestResult) Create() error {
 
 func AddContestResultIfNotExists(userId int64, contestId int64) error {
 	contestResult := ContestResult{
-		Id:        0,
-		UserId:    userId,
-		ContestId: contestId,
+		Id:          0,
+		Penalty:     0,
+		SolvedTasks: 0,
+		UserId:      userId,
+		ContestId:   contestId,
 	}
 	exists, err := contestResult.Exists()
 	if err != nil {
