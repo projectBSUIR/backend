@@ -30,7 +30,7 @@ func Coach(c *fiber.Ctx) error {
 	if userStatus == types.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
-	if userStatus < types.Admin {
+	if userStatus < types.Coach {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 

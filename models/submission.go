@@ -1,7 +1,9 @@
 package models
 
 import (
+	"encoding/json"
 	"fiber-apis/databases"
+	"github.com/gofiber/fiber/v2"
 	"time"
 )
 
@@ -22,8 +24,18 @@ type Submission struct {
 	UserId     int64  `json:"user_id"`
 }
 
+func CreateVerdict(status string, log string, time int64, memory int64) string {
+	verdict, _ := json.Marshal(fiber.Map{
+		"Status": status,
+		"Log":    log,
+		"Time":   time,
+		"Memory": memory,
+	})
+	return string(verdict)
+}
+
 func (submission *Submission) SetDefaultValues() {
-	submission.Verdict = "Pending"
+	submission.Verdict = CreateVerdict("Pending", "", 0, 0)
 	submission.SubmitTime = time.Now().Format(time.RFC3339)
 }
 
@@ -53,20 +65,23 @@ func (submission *Submission) Create() error {
 	return nil
 }
 
-func GetSubmissionsByUser(userId int64) ([]SubmissionInfo, error) {
-	rows, err := databases.DataBase.Query("SELECT `id`, `submit_time`, `verdict`, `problem_id` FROM `submission` WHERE `user_id` = ?", userId)
+func GetSubmissionsByProblem(userId int64, problemId int64) ([]SubmissionInfo, error) {
+	rows, err := databases.DataBase.Query("SELECT `id`, `submit_time`, `verdict` FROM `submission` WHERE `user_id` = ? AND`problem_id` = ?", userId, problemId)
 	if err != nil {
 		return nil, err
 	}
 	submissions := make([]SubmissionInfo, 0)
 	for rows.Next() {
 		var submission SubmissionInfo
-		err := rows.Scan(&submission.Id, &submission.SubmitTime, &submission.Verdict, &submission.ProblemId)
-		submission.UserId = userId
-		submissions = append(submissions, submission)
+		err := rows.Scan(&submission.Id, &submission.SubmitTime, &submission.Verdict)
 		if err != nil {
 			return nil, err
 		}
+
+		submission.ProblemId = problemId
+		submission.UserId = userId
+
+		submissions = append(submissions, submission)
 	}
 	return submissions, nil
 }
@@ -80,10 +95,11 @@ func GetSubmissions() ([]SubmissionInfo, error) {
 	for rows.Next() {
 		var submission SubmissionInfo
 		err := rows.Scan(&submission.Id, &submission.SubmitTime, &submission.Verdict, &submission.ProblemId, &submission.UserId)
-		submissions = append(submissions, submission)
 		if err != nil {
 			return nil, err
 		}
+
+		submissions = append(submissions, submission)
 	}
 	return submissions, nil
 }
@@ -103,7 +119,7 @@ func GetSolutionBySubmissionId(submissionId int64) ([]byte, error) {
 	return solution, nil
 }
 
-func UpdateSubmissionVerdict(submissionId int64, newVerdict string) error {
+func UpdateSubmissionVerdict(submissionId int64, newVerdict fiber.Map) error {
 	_, err := databases.DataBase.Exec("UPDATE `submission` SET `verdict`=? WHERE `id`=?", newVerdict, submissionId)
 	if err != nil {
 		var prevErr error = err

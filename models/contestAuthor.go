@@ -11,7 +11,7 @@ type ContestAuthor struct {
 	ContestId int64 `json:"contest_id"`
 }
 
-func setAuthorOfContest(contestId int64, c *fiber.Ctx) error {
+func SetAuthorOfContest(contestId int64, c *fiber.Ctx) error {
 	id, err := GetUserId(c)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func setAuthorOfContest(contestId int64, c *fiber.Ctx) error {
 	return contestAuthor.Create()
 }
 
-func (contestAuthor *ContestAuthor) isAuthorOfContest() (bool, error) {
+func (contestAuthor *ContestAuthor) IsAuthorOfContest() (bool, error) {
 	rows, err := databases.DataBase.Query("SELECT count(*) FROM `contestAuthor` WHERE `user_id`=? AND `contest_id`=?", contestAuthor.UserId, contestAuthor.ContestId)
 	if err != nil {
 		return false, err
