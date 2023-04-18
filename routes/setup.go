@@ -27,6 +27,8 @@ func Setup(app *fiber.App) {
 
 	app.Use(middlewares.Admin)
 	app.Post("/setCoach", SetCoach)
+
+	app.Use(middlewares.TestMachine)
 	app.Get("/testSubmission", ExtractSubmissionFromTestingQueue)
 	app.Post("/setVerdict", SetVerdict)
 }

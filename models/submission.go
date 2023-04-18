@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+type VerdictInfo struct {
+	Status string `json:"status"`
+	Log    string `json:"log"`
+	Time   int64  `json:"time"`
+	Memory int64  `json"memory"`
+}
+
 type SubmissionInfo struct {
 	Id         int64     `json:"id"`
 	SubmitTime string    `json:"submit_time"`
@@ -16,12 +23,12 @@ type SubmissionInfo struct {
 }
 
 type Submission struct {
-	Id         int64     `json:"id"`
-	Solution   []byte    `json:"solution"`
-	SubmitTime string    `json:"submit_time"`
-	Verdict    fiber.Map `json:"verdict"`
-	ProblemId  int64     `json:"problem_id"`
-	UserId     int64     `json:"user_id"`
+	Id         int64       `json:"id"`
+	Solution   []byte      `json:"solution"`
+	SubmitTime string      `json:"submit_time"`
+	Verdict    VerdictInfo `json:"verdict"`
+	ProblemId  int64       `json:"problem_id"`
+	UserId     int64       `json:"user_id"`
 }
 
 type TestingInfo struct {
@@ -34,21 +41,21 @@ type TestingInfo struct {
 	ProblemProperties fiber.Map `json:"problem_properties"`
 }
 
-func CreateVerdict(status string, log string, time int64, memory int64) fiber.Map {
-	return fiber.Map{
-		"Status": status,
-		"Log":    log,
-		"Time":   time,
-		"Memory": memory,
+func CreateVerdict(status string, log string, time int64, memory int64) VerdictInfo {
+	return VerdictInfo{
+		Status: status,
+		Log:    log,
+		Time:   time,
+		Memory: memory,
 	}
 }
 
-func ConvertMapToString(verdict fiber.Map) (string, error) {
+func ConvertMapToString(verdict any) (string, error) {
 	ret, err := json.Marshal(verdict)
 	return string(ret), err
 }
 
-func ConvertStringToMap(sverdict string) fiber.Map {
+func ConvertToMap(sverdict string) fiber.Map {
 	var verdict fiber.Map
 	_ = json.Unmarshal([]byte(sverdict), &verdict)
 	return verdict
@@ -102,7 +109,7 @@ func GetSubmissionsByProblem(userId int64, problemId int64) ([]SubmissionInfo, e
 		if err != nil {
 			return nil, err
 		}
-		submission.Verdict = ConvertStringToMap(stringVerdict)
+		submission.Verdict = ConvertToMap(stringVerdict)
 
 		submission.ProblemId = problemId
 		submission.UserId = userId
@@ -122,7 +129,7 @@ func GetSubmissionsByContestId(contestId int64) ([]SubmissionInfo, error) {
 		var submission SubmissionInfo
 		var sverdict string
 		err := rows.Scan(&submission.Id, &submission.SubmitTime, &sverdict, &submission.ProblemId, &submission.UserId)
-		submission.Verdict = ConvertStringToMap(sverdict)
+		submission.Verdict = ConvertToMap(sverdict)
 		if err != nil {
 			return nil, err
 		}
@@ -174,6 +181,6 @@ func GetFirstSubmissionFromTestingQueue() (TestingInfo, error) {
 		return TestingInfo{}, err
 	}
 
-	solutionInfo.ProblemProperties = ConvertStringToMap(sproperties)
+	solutionInfo.ProblemProperties = ConvertToMap(sproperties)
 	return solutionInfo, nil
 }
