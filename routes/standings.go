@@ -7,8 +7,8 @@ import (
 
 type UserResult struct {
 	Login          string                     `json:"login"`
-	ContestResult  int                        `json:"contest_result"`
-	Penalty        int                        `json:"penalty"`
+	ContestResult  int64                      `json:"contest_result"`
+	Penalty        int64                      `json:"penalty"`
 	ProblemsResult []models.ProblemResultInfo `json:"problems_result"`
 }
 
@@ -33,7 +33,7 @@ func CreateTable(contestId int64) ([]UserResult, error) {
 		}
 		table = append(table, UserResult{
 			Login:          login,
-			ContestResult:  contestResult.SolvedProblems,
+			ContestResult:  contestResult.SolvedTasks,
 			Penalty:        contestResult.Penalty,
 			ProblemsResult: userProblemResults,
 		})

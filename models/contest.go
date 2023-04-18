@@ -46,7 +46,7 @@ func (contest *Contest) Create(c *fiber.Ctx) (ContestInfo, error) {
 		return ContestInfo{}, prevErr
 	}
 	contest.Id = id
-	err = setAuthorOfContest(contest.Id, c)
+	err = SetAuthorOfContest(contest.Id, c)
 	if err != nil {
 		prevErr := err
 		_, err := databases.DataBase.Query("ROLLBACK")
