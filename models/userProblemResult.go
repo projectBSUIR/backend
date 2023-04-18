@@ -104,13 +104,12 @@ func (userProblemResult *UserProblemResult) Create() error {
 	return nil
 }
 
-func (userProblemResult *UserProblemResult) AddAttempt() error {
+func (userProblemResult *UserProblemResult) UpdateLastAttempt() error {
 	if userProblemResult.Result == 1 {
 		return nil
 	}
-	userProblemResult.AttemptsCount++
-	_, err := databases.DataBase.Exec("UPDATE `userProblemResult` SET `last_attempt`=?, `attempts_count`=? WHERE `user_id`=? AND `problem_id`=?",
-		userProblemResult.LastAttempt, userProblemResult.AttemptsCount,
+	_, err := databases.DataBase.Exec("UPDATE `userProblemResult` SET `last_attempt`=? WHERE `user_id`=? AND `problem_id`=?",
+		userProblemResult.LastAttempt,
 		userProblemResult.UserId, userProblemResult.ProblemId)
 	if err != nil {
 		_, nerr := databases.DataBase.Query("ROLLBACK")
@@ -120,6 +119,18 @@ func (userProblemResult *UserProblemResult) AddAttempt() error {
 		return err
 	}
 	return nil
+}
+
+func GetAttemptsCount(userId int64, problemId int64) (int64, error) {
+	rows, err := databases.DataBase.Query("SELECT `attempts_count` FROM `userProblemResult` WHERE `user_id`=? AND `problem_id`=?",
+		userId, problemId)
+	if err != nil {
+		return 0, err
+	}
+	var attemptsCount int64
+	rows.Next()
+	rows.Scan(&attemptsCount)
+	return attemptsCount, nil
 }
 
 func AddUserProblemResultIfNotExists(userId int64, problemId int64, last_attempt string) error {
@@ -139,15 +150,12 @@ func AddUserProblemResultIfNotExists(userId int64, problemId int64, last_attempt
 	if !exists {
 		err = userProblemResult.Create()
 		return err
-	} else {
-		err = userProblemResult.AddAttempt()
-		return err
 	}
 	return nil
 }
 
 func GetUserProblemResult(userId int64, problemId int64) (int8, error) {
-	rows, err := databases.DataBase.Query("SELECT `result` FROM `userProblemResult` WHERE `userId`=? AND `problemId`=?", userId, problemId)
+	rows, err := databases.DataBase.Query("SELECT `result` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id`= ?", userId, problemId)
 	if err != nil {
 		return 0, err
 	}
@@ -168,10 +176,15 @@ func UpdateUserProblemResult(userId int64, problemId int64, new_result int8) err
 	if err != nil {
 		return err
 	}
-	if result >= new_result {
+	if result == 1 {
 		return nil
 	}
-	_, err = databases.DataBase.Exec("UPDATE `userProblemResult` SET `result`=?", new_result)
+	attemptsCount, err := GetAttemptsCount(userId, problemId)
+	if err != nil {
+		return err
+	}
+	attemptsCount++
+	_, err = databases.DataBase.Exec("UPDATE `userProblemResult` SET `attempts_count`= ?, `result`= ? WHERE `user_id`= ? AND `problem_id`= ?", attemptsCount, new_result, userId, problemId)
 	if err != nil {
 		_, nerr := databases.DataBase.Exec("ROLLBACK")
 		if nerr != nil {

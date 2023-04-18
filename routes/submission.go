@@ -2,9 +2,9 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fiber-apis/models"
 	"fiber-apis/types"
-	"github.com/fatih/structs"
 	"github.com/gofiber/fiber/v2"
 	"io"
 	"strconv"
@@ -156,6 +156,13 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 	})
 }
 
+func StructToMap(obj interface{}) (newMap map[string]interface{}) {
+	data, _ := json.Marshal(obj)
+
+	_ = json.Unmarshal(data, &newMap)
+	return newMap
+}
+
 func SetVerdict(c *fiber.Ctx) error {
 	var testerVerdict types.TestingVerdict
 
@@ -164,7 +171,7 @@ func SetVerdict(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	err := models.UpdateSubmissionVerdict(testerVerdict.SubmissionId, structs.Map(testerVerdict.Verdict))
+	err := models.UpdateSubmissionVerdict(testerVerdict.SubmissionId, StructToMap(testerVerdict.Verdict))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),

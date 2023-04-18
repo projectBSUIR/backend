@@ -3,7 +3,7 @@ package types
 type VerdictInfo struct {
 	Status string `json:"status"`
 	Time   int64  `json:"time"`
-	Memory int64  `json"memory"`
+	Memory int64  `json:"memory"`
 }
 
 type TestingVerdict struct {

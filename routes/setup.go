@@ -12,7 +12,11 @@ func Setup(app *fiber.App) {
 	app.Get("/contests", ViewContests)
 	app.Get("/contest/:contestId", ViewProblems)
 	app.Get("/refresh", RefreshToken)
-	app.Get("/standings", GetResultsTable)
+	app.Get("/contest/:contestId/standings", GetResultsTable)
+
+	testingMachineApp := app.Group("/testing", middlewares.TestMachine)
+	testingMachineApp.Get("/testSubmission", ExtractSubmissionFromTestingQueue)
+	testingMachineApp.Post("/setVerdict", SetVerdict)
 
 	app.Use(middlewares.Participant)
 	app.Get("/submissions/:problemId", GetSubmissions)
@@ -27,8 +31,4 @@ func Setup(app *fiber.App) {
 
 	app.Use(middlewares.Admin)
 	app.Post("/setCoach", SetCoach)
-
-	app.Use(middlewares.TestMachine)
-	app.Get("/testSubmission", ExtractSubmissionFromTestingQueue)
-	app.Post("/setVerdict", SetVerdict)
 }
