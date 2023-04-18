@@ -3,6 +3,8 @@ package routes
 import (
 	"bytes"
 	"fiber-apis/models"
+	"fiber-apis/types"
+	"github.com/fatih/structs"
 	"github.com/gofiber/fiber/v2"
 	"io"
 	"strconv"
@@ -155,6 +157,33 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 }
 
 func SetVerdict(c *fiber.Ctx) error {
+	var testerVerdict types.TestingVerdict
 
+	if err := c.BodyParser(&testerVerdict); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	err := models.UpdateSubmissionVerdict(testerVerdict.SubmissionId, structs.Map(testerVerdict.Verdict))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	switch testerVerdict.Verdict.Status {
+	case "Testing":
+		return c.SendStatus(fiber.StatusOK)
+	default:
+		{
+			var new_result int8 = 0
+			if testerVerdict.Verdict.Status == "OK" {
+				new_result = 1
+			}
+			err := models.UpdateUserProblemResult(testerVerdict.UserId, testerVerdict.ProblemId, new_result)
+			if err != nil {
+				return err
+			}
+		}
+	}
 	return c.SendStatus(fiber.StatusOK)
 }

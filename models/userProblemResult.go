@@ -2,7 +2,9 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"fiber-apis/databases"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -16,8 +18,9 @@ type UserProblemResult struct {
 }
 
 type ProblemResultInfo struct {
-	Result      int64        `json:"result"`
-	LastAttempt sql.NullTime `json:"last_attempt,omitempty"`
+	Result        int64        `json:"result"`
+	AttemptsCount int64        `json:"attempts_count"`
+	LastAttempt   sql.NullTime `json:"last_attempt,omitempty"`
 }
 
 func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, error) {
@@ -46,13 +49,13 @@ func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, er
 
 func GetProblemsStatus(userId int64, contestId int64) ([]ProblemResultInfo, error) {
 	var result []ProblemResultInfo
-	res, err := databases.DataBase.Query("SELECT `result`, `last_attempt` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
+	res, err := databases.DataBase.Query("SELECT `result`, `attempts_count`, `last_attempt` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
 	if err != nil {
 		return nil, err
 	}
 	for res.Next() {
 		var r ProblemResultInfo
-		err := res.Scan(&r.Result, &r.LastAttempt)
+		err := res.Scan(&r.Result, &r.AttemptsCount, &r.LastAttempt)
 		if err != nil {
 			return nil, err
 		}
@@ -138,6 +141,42 @@ func AddUserProblemResultIfNotExists(userId int64, problemId int64, last_attempt
 		return err
 	} else {
 		err = userProblemResult.AddAttempt()
+		return err
+	}
+	return nil
+}
+
+func GetUserProblemResult(userId int64, problemId int64) (int8, error) {
+	rows, err := databases.DataBase.Query("SELECT `result` FROM `userProblemResult` WHERE `userId`=? AND `problemId`=?", userId, problemId)
+	if err != nil {
+		return 0, err
+	}
+	count := 0
+	var result int8 = 0
+	for rows.Next() {
+		count++
+		rows.Scan(&result)
+	}
+	if count != 1 {
+		return 0, errors.New(fmt.Sprint("There is not one row with userId=", userId, " and problemId=", problemId))
+	}
+	return result, nil
+}
+
+func UpdateUserProblemResult(userId int64, problemId int64, new_result int8) error {
+	result, err := GetUserProblemResult(userId, problemId)
+	if err != nil {
+		return err
+	}
+	if result >= new_result {
+		return nil
+	}
+	_, err = databases.DataBase.Exec("UPDATE `userProblemResult` SET `result`=?", new_result)
+	if err != nil {
+		_, nerr := databases.DataBase.Exec("ROLLBACK")
+		if nerr != nil {
+			return nerr
+		}
 		return err
 	}
 	return nil

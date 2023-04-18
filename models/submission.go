@@ -3,16 +3,10 @@ package models
 import (
 	"encoding/json"
 	"fiber-apis/databases"
+	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 	"time"
 )
-
-type VerdictInfo struct {
-	Status string `json:"status"`
-	Log    string `json:"log"`
-	Time   int64  `json:"time"`
-	Memory int64  `json"memory"`
-}
 
 type SubmissionInfo struct {
 	Id         int64     `json:"id"`
@@ -23,12 +17,12 @@ type SubmissionInfo struct {
 }
 
 type Submission struct {
-	Id         int64       `json:"id"`
-	Solution   []byte      `json:"solution"`
-	SubmitTime string      `json:"submit_time"`
-	Verdict    VerdictInfo `json:"verdict"`
-	ProblemId  int64       `json:"problem_id"`
-	UserId     int64       `json:"user_id"`
+	Id         int64             `json:"id"`
+	Solution   []byte            `json:"solution"`
+	SubmitTime string            `json:"submit_time"`
+	Verdict    types.VerdictInfo `json:"verdict"`
+	ProblemId  int64             `json:"problem_id"`
+	UserId     int64             `json:"user_id"`
 }
 
 type TestingInfo struct {
@@ -41,10 +35,9 @@ type TestingInfo struct {
 	ProblemProperties fiber.Map `json:"problem_properties"`
 }
 
-func CreateVerdict(status string, log string, time int64, memory int64) VerdictInfo {
-	return VerdictInfo{
+func CreateVerdict(status string, time int64, memory int64) types.VerdictInfo {
+	return types.VerdictInfo{
 		Status: status,
-		Log:    log,
 		Time:   time,
 		Memory: memory,
 	}
@@ -62,7 +55,7 @@ func ConvertToMap(sverdict string) fiber.Map {
 }
 
 func (submission *Submission) SetDefaultValues() {
-	submission.Verdict = CreateVerdict("Pending", "", 0, 0)
+	submission.Verdict = CreateVerdict("Pending", 0, 0)
 	submission.SubmitTime = time.Now().Format(time.RFC3339)
 }
 
