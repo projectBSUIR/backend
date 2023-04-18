@@ -143,7 +143,7 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 	if !isAuthor {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
-	submissionsInfo, err := models.GetSubmissions()
+	submissionsInfo, err := models.GetSubmissionsByContestId(contestId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
@@ -152,4 +152,9 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"submissions": submissionsInfo,
 	})
+}
+
+func SetVerdict(c *fiber.Ctx) error {
+
+	return c.SendStatus(fiber.StatusOK)
 }
