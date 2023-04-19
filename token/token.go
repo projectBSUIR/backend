@@ -3,7 +3,7 @@ package token
 import (
 	"encoding/json"
 	"errors"
-	"fiber-apis/models"
+	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"time"
@@ -14,9 +14,9 @@ var JWTErrTokenExpired = errors.New("Token is expired")
 var jwtKey = []byte("secret")
 
 type JWTClaim struct {
-	Id     int64             `json:"id"`
-	User   string            `json:"user"`
-	Status models.UserStatus `json:"status"`
+	Id     int64            `json:"id"`
+	User   string           `json:"user"`
+	Status types.UserStatus `json:"status"`
 	jwt.RegisteredClaims
 }
 
@@ -27,17 +27,6 @@ func SetRefreshTokenCookie(c *fiber.Ctx, refreshToken string, expiresAt time.Tim
 		Expires:  expiresAt,
 		HTTPOnly: true,
 	})
-}
-
-func GetJWTClaim(model *models.User, expirationTime time.Time) JWTClaim {
-	return JWTClaim{
-		Id:     model.ID,
-		User:   model.Login,
-		Status: model.Status,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-		},
-	}
 }
 
 func GenerateAccessToken(c *fiber.Ctx, claims JWTClaim) (string, error) {
@@ -121,40 +110,27 @@ func Refresh(c *fiber.Ctx, signedToken string) (string, error) {
 	return GenerateAccessToken(c, *claims)
 }
 
-func GetUserStatus(c *fiber.Ctx) (models.UserStatus, error) {
+func GetClaimsFromTokens(c *fiber.Ctx) (*JWTClaim, error) {
 	signedAccessToken := c.GetReqHeaders()["Authorization"]
 	refreshToken := c.Cookies("refresh_token")
 
 	if refreshToken == "" {
-		return models.UnAuthorized, nil
+		return nil, JWTErrTokenExpired
 	}
 	accessClaims, err := ValidateToken(signedAccessToken)
 	if err != nil {
 		if err.Error() == JWTErrTokenExpired.Error() {
-			return models.UnAuthorized, nil
+			return nil, err
 		}
-		return models.UnAuthorized, err
+		return nil, err
 	}
 
 	refreshClaims, err := GetClaims(refreshToken)
 	if refreshClaims.User != accessClaims.User {
-		return models.UnAuthorized, errors.New("Wrong Access Token")
+		return nil, errors.New("Wrong Access Token")
 	}
-
-	return refreshClaims.Status, nil
-}
-
-func GetUserId(c *fiber.Ctx) (int64, error) {
-	refreshToken := c.Cookies("refresh_token")
-
-	if refreshToken == "" {
-		return 0, errors.New("refresh_token is expired")
+	if refreshClaims.Status != accessClaims.Status {
+		return nil, errors.New("Wrong Access Token")
 	}
-
-	refreshClaims, err := GetClaims(refreshToken)
-	if err != nil {
-		return 0, err
-	}
-
-	return refreshClaims.Id, nil
+	return refreshClaims, nil
 }

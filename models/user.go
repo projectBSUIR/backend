@@ -3,57 +3,39 @@ package models
 import (
 	"errors"
 	"fiber-apis/databases"
+	"fiber-apis/token"
+	"fiber-apis/types"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v4"
+	"time"
 )
-
-type UserStatus int
-
-const (
-	Participant  UserStatus = 0
-	Coach        UserStatus = 1
-	Admin        UserStatus = 2
-	UnAuthorized UserStatus = 3
-)
-
-func GetStatusById(statusId int) UserStatus {
-	switch statusId {
-	case 0:
-		return Participant
-	case 1:
-		return Coach
-	case 2:
-		return Admin
-	}
-	return UnAuthorized
-}
-
-func GetStatusByString(statusString string) UserStatus {
-	switch statusString {
-	case "Participant":
-		return Participant
-	case "Coach":
-		return Coach
-	case "Admin":
-		return Admin
-	default:
-		return UnAuthorized
-	}
-}
 
 type User struct {
-	ID       int64      `json:"id"`
-	Login    string     `json:"login"`
-	Password string     `json:"password"`
-	Email    string     `json:"email"`
-	Status   UserStatus `json:"status"`
+	ID       int64            `json:"id"`
+	Login    string           `json:"login"`
+	Password string           `json:"password"`
+	Email    string           `json:"email"`
+	Status   types.UserStatus `json:"status"`
 }
 
 type UserInfo struct {
 	Id int64 `json:"id"`
 }
 
+func GetJWTClaim(model *User, expirationTime time.Time) token.JWTClaim {
+	return token.JWTClaim{
+		Id:     model.ID,
+		User:   model.Login,
+		Status: model.Status,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+		},
+	}
+}
+
 func (model *User) SetStatus(s string) {
-	model.Status = GetStatusByString(s)
+	model.Status = types.GetStatusByString(s)
 }
 
 func (model *User) LogIn() error {
@@ -113,7 +95,7 @@ func (model *User) Register() error {
 	return nil
 }
 
-func UpdateStatus(userId int64, status UserStatus) error {
+func UpdateStatus(userId int64, status types.UserStatus) error {
 	_, err := databases.DataBase.Exec("UPDATE `user` SET `status`=? WHERE `id`=?", status, userId)
 	if err != nil {
 		prevErr := err
@@ -124,4 +106,35 @@ func UpdateStatus(userId int64, status UserStatus) error {
 		return prevErr
 	}
 	return nil
+}
+
+func GetUserStatus(c *fiber.Ctx) (types.UserStatus, error) {
+	userInfo, err := token.GetClaimsFromTokens(c)
+	if err != nil {
+		return types.UnAuthorized, err
+	}
+	return userInfo.Status, nil
+}
+
+func GetUserId(c *fiber.Ctx) (int64, error) {
+	userInfo, err := token.GetClaimsFromTokens(c)
+	if err != nil {
+		return 0, err
+	}
+
+	return userInfo.Id, nil
+}
+
+func GetLoginById(userId int64) (string, error) {
+	var login string
+	log, err := databases.DataBase.Query("SELECT `login` FROM `user` WHERE `id`= ?", userId)
+	if err != nil {
+		return "", err
+	}
+	log.Next()
+	err = log.Scan(&login)
+	if err != nil {
+		return "", err
+	}
+	return login, nil
 }

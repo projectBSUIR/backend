@@ -2,13 +2,12 @@ package routes
 
 import (
 	"fiber-apis/models"
-	"fiber-apis/token"
+	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 )
 
 func GetContests(c *fiber.Ctx) error {
-	userId, err := token.GetUserId(c)
-
+	userId, err := models.GetUserId(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
@@ -32,7 +31,7 @@ func SetCoach(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	err := models.UpdateStatus(userInfo.Id, models.Coach)
+	err := models.UpdateStatus(userInfo.Id, types.Coach)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
