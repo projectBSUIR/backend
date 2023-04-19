@@ -12,12 +12,15 @@ func Setup(app *fiber.App) {
 	app.Get("/contests", ViewContests)
 	app.Get("/contest/:contestId", ViewProblems)
 	app.Get("/refresh", RefreshToken)
-	app.Get("/standings", GetResultsTable)
+	app.Get("/contest/:contestId/standings", GetResultsTable)
+
+	testingMachineApp := app.Group("/testing", middlewares.TestMachine)
+	testingMachineApp.Get("/testSubmission", ExtractSubmissionFromTestingQueue)
+	testingMachineApp.Post("/setVerdict", SetVerdict)
 
 	app.Use(middlewares.Participant)
 	app.Get("/submissions/:problemId", GetSubmissions)
 	app.Get("/contest/:contestId/submissions", GetAllSubmissions)
-	app.Get("/check", CheckHandler)
 	app.Post("/submit", SubmitSolution)
 	app.Get("/ownContests", GetContests)
 

@@ -19,10 +19,14 @@ type ContestInfo struct {
 	Name string `json:"name"`
 }
 
+func Before(timeA time.Time, timeB time.Time) bool {
+	return timeA.Before(timeB)
+}
+
 func (contest *Contest) NotStarted() bool {
 	timeNow := time.Now()
 	startTimeContest, _ := time.Parse(time.RFC3339, contest.StartTime)
-	return timeNow.Before(startTimeContest)
+	return Before(timeNow, startTimeContest)
 }
 
 func (contest *Contest) Create(c *fiber.Ctx) (ContestInfo, error) {
@@ -123,4 +127,36 @@ func GetParticipantsIds(contestId int64) ([]int64, error) {
 		participantsIds = append(participantsIds, id)
 	}
 	return participantsIds, nil
+}
+
+func GetStartTimeOfContest(contestId int64) (time.Time, error) {
+	res, err := databases.DataBase.Query("SELECT `start_time` FROM `contest` WHERE `id`=?", contestId)
+	if err != nil {
+		return time.Now(), err
+	}
+	var startTime time.Time
+	var sstartTime string
+	res.Next()
+	err = res.Scan(&sstartTime)
+	if err != nil {
+		return time.Now(), err
+	}
+	startTime, err = time.Parse(time.RFC3339, sstartTime)
+	return startTime, err
+}
+
+func ContestNotStarted(contestId int64) (bool, error) {
+	startTime, err := GetStartTimeOfContest(contestId)
+	if err != nil {
+		return false, err
+	}
+	return Before(time.Now(), startTime), nil
+}
+
+func ContestIsNotStartedByProblemId(problemId int64) (bool, error) {
+	contestId, err := GetContestIdByProblemId(problemId)
+	if err != nil {
+		return false, err
+	}
+	return ContestNotStarted(contestId)
 }

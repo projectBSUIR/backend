@@ -2,7 +2,9 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"fiber-apis/models"
+	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 	"io"
 	"strconv"
@@ -11,6 +13,23 @@ import (
 const MAX_SOLUTION_SIZE int64 = 1024 * 1024 * 1024 * 2
 
 func SubmitSolution(c *fiber.Ctx) error {
+	contestId, err := strconv.ParseInt(c.FormValue("ContestId"), 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	isNotStarted, err := models.ContestNotStarted(contestId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if isNotStarted {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
 	fileHeader, err := c.FormFile("Solution")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -55,12 +74,6 @@ func SubmitSolution(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	contestId, err := strconv.ParseInt(c.FormValue("ContestId"), 10, 64)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
-		})
-	}
 
 	submission.ProblemId = problemId
 	submission.SetDefaultValues()
@@ -77,7 +90,7 @@ func SubmitSolution(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	err = models.AddUserProblemResultIfNotExists(submission.UserId, submission.ProblemId)
+	err = models.AddUserProblemResultIfNotExists(submission.UserId, submission.ProblemId, submission.SubmitTime)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
@@ -103,6 +116,17 @@ func GetSubmissions(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
+
+	isNotStarted, err := models.ContestIsNotStartedByProblemId(problemId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if isNotStarted {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
 	userId, err := models.GetUserId(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -129,11 +153,7 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 		})
 	}
 	contestId, err := strconv.ParseInt(c.Params("contestId"), 10, 64)
-	contestAuthor := models.ContestAuthor{
-		Id:        0,
-		UserId:    userId,
-		ContestId: contestId,
-	}
+	contestAuthor := models.CreateContestAuthor(0, userId, contestId)
 	isAuthor, err := contestAuthor.IsAuthorOfContest()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -143,7 +163,7 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 	if !isAuthor {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
-	submissionsInfo, err := models.GetSubmissions()
+	submissionsInfo, err := models.GetSubmissionsByContestId(contestId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
@@ -152,4 +172,45 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"submissions": submissionsInfo,
 	})
+}
+
+func StructToMap(obj interface{}) (newMap map[string]interface{}) {
+	data, _ := json.Marshal(obj)
+
+	_ = json.Unmarshal(data, &newMap)
+	return newMap
+}
+
+func SetVerdict(c *fiber.Ctx) error {
+	var testerVerdict types.TestingVerdict
+
+	if err := c.BodyParser(&testerVerdict); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	err := models.UpdateSubmissionVerdict(testerVerdict.SubmissionId, StructToMap(testerVerdict.Verdict))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	switch testerVerdict.Verdict.Status {
+	case "Testing":
+		return c.SendStatus(fiber.StatusOK)
+	default:
+		{
+			var new_result int8 = 0
+			if testerVerdict.Verdict.Status == "OK" {
+				new_result = 1
+			}
+			err := models.UpdateUserProblemResult(testerVerdict.UserId, testerVerdict.ProblemId, new_result)
+			if err != nil {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": err,
+				})
+			}
+		}
+	}
+	return c.SendStatus(fiber.StatusOK)
 }

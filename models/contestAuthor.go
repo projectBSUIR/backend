@@ -11,6 +11,14 @@ type ContestAuthor struct {
 	ContestId int64 `json:"contest_id"`
 }
 
+func CreateContestAuthor(Id int64, userId int64, contestId int64) ContestAuthor {
+	return ContestAuthor{
+		Id:        Id,
+		UserId:    userId,
+		ContestId: contestId,
+	}
+}
+
 func SetAuthorOfContest(contestId int64, c *fiber.Ctx) error {
 	id, err := GetUserId(c)
 	if err != nil {

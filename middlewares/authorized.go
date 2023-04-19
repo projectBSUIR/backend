@@ -16,6 +16,9 @@ func Participant(c *fiber.Ctx) error {
 	if userStatus == types.UnAuthorized {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
+	if userStatus < types.Participant {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
 
 	return c.Next()
 }
@@ -48,6 +51,24 @@ func Admin(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusUnauthorized)
 	}
 	if userStatus != types.Admin {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
+	return c.Next()
+}
+
+func TestMachine(c *fiber.Ctx) error {
+	userStatus, err := models.GetUserStatus(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	if userStatus == types.UnAuthorized {
+		return c.SendStatus(fiber.StatusUnauthorized)
+	}
+	if userStatus != types.TestMachine {
 		return c.SendStatus(fiber.StatusForbidden)
 	}
 

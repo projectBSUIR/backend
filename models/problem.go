@@ -63,3 +63,14 @@ func GetProblemsFromContest(contestId int) ([]ProblemInfo, error) {
 	}
 	return problems, nil
 }
+
+func GetContestId(problemid int64) (int64, error) {
+	res, err := databases.DataBase.Query("SELECT `contest_id` FROM `problem` WHERE `id`=?", problemid)
+	if err != nil {
+		return 0, err
+	}
+	var contestId int64
+	res.Next()
+	err = res.Scan(&contestId)
+	return contestId, err
+}

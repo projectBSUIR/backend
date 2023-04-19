@@ -3,6 +3,7 @@ package routes
 import (
 	"fiber-apis/models"
 	"github.com/gofiber/fiber/v2"
+	"strconv"
 )
 
 type UserResult struct {
@@ -42,13 +43,23 @@ func CreateTable(contestId int64) ([]UserResult, error) {
 }
 
 func GetResultsTable(c *fiber.Ctx) error {
-	var contestId int64
-	err := c.BodyParser(&contestId)
+	contestId, err := strconv.ParseInt(c.Params("contestId"), 10, 64)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
+
+	isNotStarted, err := models.ContestNotStarted(contestId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if isNotStarted {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
 	table, err := CreateTable(contestId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
