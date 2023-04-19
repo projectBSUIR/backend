@@ -49,6 +49,17 @@ func GetResultsTable(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
+
+	isNotStarted, err := models.ContestNotStarted(contestId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if isNotStarted {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
 	table, err := CreateTable(contestId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{

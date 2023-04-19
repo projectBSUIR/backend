@@ -177,3 +177,21 @@ func GetFirstSubmissionFromTestingQueue() (TestingInfo, error) {
 	solutionInfo.ProblemProperties = ConvertToMap(sproperties)
 	return solutionInfo, nil
 }
+
+func GetSubmitTime(userId int64, problemId int64, attemptId int64) (time.Time, error) {
+	res, err := databases.DataBase.Query("SELECT `submit_time` FROM `submission` WHERE `user_id`=? AND `problem_id`=? ORDER BY `id` LIMIT ?", userId, problemId, attemptId)
+	if err != nil {
+		return time.Now(), err
+	}
+	var startTime time.Time
+	var sstartTime string
+	for i := int64(0); i < attemptId; i++ {
+		res.Next()
+	}
+	err = res.Scan(&sstartTime)
+	if err != nil {
+		return time.Now(), err
+	}
+	startTime, err = time.Parse(time.RFC3339, sstartTime)
+	return startTime, err
+}

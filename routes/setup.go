@@ -21,7 +21,6 @@ func Setup(app *fiber.App) {
 	app.Use(middlewares.Participant)
 	app.Get("/submissions/:problemId", GetSubmissions)
 	app.Get("/contest/:contestId/submissions", GetAllSubmissions)
-	app.Get("/check", CheckHandler)
 	app.Post("/submit", SubmitSolution)
 	app.Get("/ownContests", GetContests)
 

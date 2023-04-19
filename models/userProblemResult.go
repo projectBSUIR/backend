@@ -179,10 +179,19 @@ func UpdateUserProblemResult(userId int64, problemId int64, new_result int8) err
 	if result == 1 {
 		return nil
 	}
+
 	attemptsCount, err := GetAttemptsCount(userId, problemId)
 	if err != nil {
 		return err
 	}
+
+	if new_result == 1 {
+		err = UpdateUserContestResult(userId, problemId, attemptsCount)
+		if err != nil {
+			return err
+		}
+	}
+
 	attemptsCount++
 	_, err = databases.DataBase.Exec("UPDATE `userProblemResult` SET `attempts_count`= ?, `result`= ? WHERE `user_id`= ? AND `problem_id`= ?", attemptsCount, new_result, userId, problemId)
 	if err != nil {

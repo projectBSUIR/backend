@@ -13,6 +13,23 @@ import (
 const MAX_SOLUTION_SIZE int64 = 1024 * 1024 * 1024 * 2
 
 func SubmitSolution(c *fiber.Ctx) error {
+	contestId, err := strconv.ParseInt(c.FormValue("ContestId"), 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	isNotStarted, err := models.ContestNotStarted(contestId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if isNotStarted {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
 	fileHeader, err := c.FormFile("Solution")
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -52,12 +69,6 @@ func SubmitSolution(c *fiber.Ctx) error {
 
 	var problemId int64
 	problemId, err = strconv.ParseInt(c.FormValue("ProblemId"), 10, 64)
-	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"message": err.Error(),
-		})
-	}
-	contestId, err := strconv.ParseInt(c.FormValue("ContestId"), 10, 64)
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"message": err.Error(),
@@ -105,6 +116,17 @@ func GetSubmissions(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
+
+	isNotStarted, err := models.ContestIsNotStartedByProblemId(problemId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	if isNotStarted {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
 	userId, err := models.GetUserId(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -131,11 +153,7 @@ func GetAllSubmissions(c *fiber.Ctx) error {
 		})
 	}
 	contestId, err := strconv.ParseInt(c.Params("contestId"), 10, 64)
-	contestAuthor := models.ContestAuthor{
-		Id:        0,
-		UserId:    userId,
-		ContestId: contestId,
-	}
+	contestAuthor := models.CreateContestAuthor(0, userId, contestId)
 	isAuthor, err := contestAuthor.IsAuthorOfContest()
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -188,7 +206,9 @@ func SetVerdict(c *fiber.Ctx) error {
 			}
 			err := models.UpdateUserProblemResult(testerVerdict.UserId, testerVerdict.ProblemId, new_result)
 			if err != nil {
-				return err
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": err,
+				})
 			}
 		}
 	}
