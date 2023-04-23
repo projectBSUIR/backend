@@ -3,6 +3,7 @@ package main
 import (
 	"fiber-apis/databases"
 	"fiber-apis/routes"
+	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
@@ -15,7 +16,12 @@ func main() {
 		BodyLimit: 128 * 1024 * 1024,
 	})
 
-	err := os.Remove("logs.txt")
+	err := zipper.CreateTempDir()
+	if err != nil {
+		panic(err)
+	}
+
+	err = os.Remove("logs.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
