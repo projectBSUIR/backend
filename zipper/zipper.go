@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-const TEMPDIRECTORY = "D:/Projects/BSUIR/backend/temp/"
+var TEMPDIRECTORY string = "./temp/"
 
 func makeTempDir(name string) string {
 	return TEMPDIRECTORY + name
@@ -49,6 +49,7 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 			os.Remove(zips[i].Name())
 		}
 		os.Remove(propertiesTempFile.Name())
+		os.RemoveAll(TEMPDIRECTORY)
 	}
 
 	for i := 0; i < len(zips); i++ {
@@ -127,4 +128,10 @@ func CloneFileToZip(f *zip.File, path string, zipFileWriter *zip.Writer) error {
 		return err
 	}
 	return nil
+}
+
+func CreateTempDir() error {
+	var err error
+	TEMPDIRECTORY, err = os.MkdirTemp(".", "temp")
+	return err
 }
