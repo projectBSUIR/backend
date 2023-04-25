@@ -21,12 +21,7 @@ func main() {
 		panic(err)
 	}
 
-	err = os.Remove("logs.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	file, err := os.OpenFile("logs.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
+	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
