@@ -7,24 +7,18 @@
   Далее необходимо склонировать репозиторий:
   ```
   git clone https://github.com/projectBSUIR/backend
-  git checkout dev
+  git checkout main
   ```
   
   [Здесь](https://learn.microsoft.com/ru-ru/azure/developer/go/configure-visual-studio-code) можно установить Go для работы с ним в Visual Studio Code
   
-  Далее необходимо установить в папке проекта Go Fiber
+  Далее необходимо установить в папке проекта необходимые модули 
   ```
   go get github.com/gofiber/fiber/v2
-  ```
-  
-  ## Запуск проекта
-  
-  Следующая команда запускает сервер на http://127.0.0.1:5000/
+  go get github.com/go-sql-driver/mysql
+  github.com/golang-jwt/jwt/v4
   
   ```
-  go run main.go
-  ```
-  
   ## Скачивание MySQL
   
   [Здесь](https://dev.mysql.com/downloads/installer/) нужно скачать установщик для mysql.
@@ -40,6 +34,14 @@
   ### Запуск сервера MySQL
   
   Необходимо запустить MySQL Installer и в строке MySQL сервер выбрать Reconfigure. Нажимать далее до момента ввода пароля. После его ввода нажать на check и нажать далее. На следующей странице нажать execute и ждать запуска сервера. 
+
+  ## Запуск проекта
+  
+  Следующая команда запускает сервер на http://127.0.0.1:5000/
+  
+  ```
+  go run main.go
+  ```
 
   ## Регистрация и авторизация пользователя
    ### Регистрация [POST]
@@ -112,7 +114,7 @@
    
    По следующей ссылке можно выйти из аккаунта в случае, если вы были авторизованы
    ```
-   http://127.0.0.1:5000/login
+   http://127.0.0.1:5000/logout
    ```
    
    Выход является успешным, если статус запроса 200.
