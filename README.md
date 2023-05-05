@@ -16,8 +16,7 @@
   ```
   go get github.com/gofiber/fiber/v2
   go get github.com/go-sql-driver/mysql
-  github.com/golang-jwt/jwt/v4
-  
+  go get github.com/golang-jwt/jwt/v4
   ```
   ## Скачивание MySQL
   
