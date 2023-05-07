@@ -25,10 +25,12 @@ type Submission struct {
 	UserId     int64             `json:"user_id"`
 }
 
-type TestingInfo struct {
-	SubmissionId      int64     `json:"submission_id"`
-	ProblemId         int64     `json:"problem_id"`
-	ContestId         int64     `json:"contest_id"`
+type TestingIdsInfo struct {
+	SubmissionId int64 `json:"submission_id"`
+	ProblemId    int64 `json:"problem_id"`
+}
+
+type TestingFilesInfo struct {
 	Solution          []byte    `json:"solution"`
 	Testset           []byte    `json:"testset"`
 	Checker           []byte    `json:"checker"`
@@ -149,29 +151,39 @@ func UpdateSubmissionVerdict(submissionId int64, newVerdict fiber.Map) error {
 	return nil
 }
 
-func GetFirstSubmissionFromTestingQueue() (TestingInfo, error) {
-	row, err := databases.DataBase.Query("SELECT `id`, `solution`, `problem_id` FROM `submission` WHERE `id`= (SELECT `submission_id` FROM `testingQueue` ORDER BY `id` LIMIT 1)")
+func GetFirstSubmissionFromTestingQueue() (TestingIdsInfo, error) {
+	row, err := databases.DataBase.Query("SELECT `id`, `problem_id` FROM `submission` WHERE `id`= (SELECT `submission_id` FROM `testingQueue` ORDER BY `id` LIMIT 1)")
 	if err != nil {
-		return TestingInfo{}, err
+		return TestingIdsInfo{}, err
 	}
-	var solutionInfo TestingInfo
-	row.Next()
-	err = row.Scan(&solutionInfo.SubmissionId, &solutionInfo.Solution, &solutionInfo.ProblemId)
+	var testingIdsInfo TestingIdsInfo
+	err = row.Scan(&testingIdsInfo.SubmissionId, &testingIdsInfo.ProblemId)
+	return testingIdsInfo, err
+}
+
+func GetFilesForTestingSubmission(submissionId int64, problemId int64) (TestingFilesInfo, error) {
+	row, err := databases.DataBase.Query("SELECT `solution` FROM `submission` WHERE `id`= ?", submissionId)
 	if err != nil {
-		return TestingInfo{}, err
+		return TestingFilesInfo{}, err
+	}
+	var solutionInfo TestingFilesInfo
+	row.Next()
+	err = row.Scan(&solutionInfo.Solution)
+	if err != nil {
+		return TestingFilesInfo{}, err
 	}
 
-	row, err = databases.DataBase.Query("SELECT `testset`, `checker`, `contest_id`, `problem_properties` FROM `problem` WHERE `id`= ?", solutionInfo.ProblemId)
+	row, err = databases.DataBase.Query("SELECT `testset`, `checker`, `problem_properties` FROM `problem` WHERE `id`= ?", problemId)
 	if err != nil {
-		return TestingInfo{}, err
+		return TestingFilesInfo{}, err
 	}
 
 	row.Next()
 	var sproperties string
 
-	err = row.Scan(&solutionInfo.Testset, &solutionInfo.Checker, &solutionInfo.ContestId, &sproperties)
+	err = row.Scan(&solutionInfo.Testset, &solutionInfo.Checker, &sproperties)
 	if err != nil {
-		return TestingInfo{}, err
+		return TestingFilesInfo{}, err
 	}
 
 	solutionInfo.ProblemProperties = ConvertToMap(sproperties)

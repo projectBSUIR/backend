@@ -20,3 +20,19 @@ func ExtractSubmissionFromTestingQueue(c *fiber.Ctx) error {
 	}
 	return c.Status(fiber.StatusOK).JSON(testingInfo)
 }
+
+func ExtractFilesForTesting(c *fiber.Ctx) error {
+	var testingInfo models.TestingIdsInfo
+	if err := c.BodyParser(&testingInfo); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	testingFilesInfo, err := models.GetFilesForTestingSubmission(testingInfo.SubmissionId, testingInfo.ProblemId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(testingFilesInfo)
+}

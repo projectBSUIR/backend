@@ -15,7 +15,8 @@ func Setup(app *fiber.App) {
 	app.Get("/contest/:contestId/standings", GetResultsTable)
 
 	testingMachineApp := app.Group("/testing", middlewares.TestMachine)
-	testingMachineApp.Get("/testSubmission", ExtractSubmissionFromTestingQueue)
+	testingMachineApp.Get("/extractSubmission", ExtractSubmissionFromTestingQueue)
+	testingMachineApp.Get("/extractTestingFiles", ExtractFilesForTesting)
 	testingMachineApp.Post("/setVerdict", SetVerdict)
 
 	app.Use(middlewares.Participant)
