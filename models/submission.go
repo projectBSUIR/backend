@@ -195,3 +195,13 @@ func GetSubmitTime(userId int64, problemId int64, attemptId int64) (time.Time, e
 	startTime, err = time.Parse(time.RFC3339, sstartTime)
 	return startTime, err
 }
+
+func GetUserIdFromSubmission(submissionId int64) (int64, error) {
+	res, err := databases.DataBase.Query("SELECT `user_id` FROM `submission` WHERE `submission_id`=?", submissionId)
+	if err != nil {
+		return 0, err
+	}
+	var userId int64
+	err = res.Scan(&userId)
+	return userId, err
+}

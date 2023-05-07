@@ -9,6 +9,5 @@ type VerdictInfo struct {
 type TestingVerdict struct {
 	SubmissionId int64       `json:"submission_id"`
 	ProblemId    int64       `json:"problem_id"`
-	UserId       int64       `json:"user_id"`
 	Verdict      VerdictInfo `json:"verdict"`
 }

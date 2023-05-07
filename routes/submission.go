@@ -195,6 +195,14 @@ func SetVerdict(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
+
+	userId, err := models.GetUserIdFromSubmission(testerVerdict.SubmissionId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
 	switch testerVerdict.Verdict.Status {
 	case "Testing":
 		return c.SendStatus(fiber.StatusOK)
@@ -204,7 +212,7 @@ func SetVerdict(c *fiber.Ctx) error {
 			if testerVerdict.Verdict.Status == "OK" {
 				new_result = 1
 			}
-			err := models.UpdateUserProblemResult(testerVerdict.UserId, testerVerdict.ProblemId, new_result)
+			err := models.UpdateUserProblemResult(userId, testerVerdict.ProblemId, new_result)
 			if err != nil {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"message": err,
