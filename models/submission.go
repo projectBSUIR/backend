@@ -58,7 +58,7 @@ func ConvertToMap(sverdict string) fiber.Map {
 
 func (submission *Submission) SetDefaultValues() {
 	submission.Verdict = CreateVerdict("Pending", 0, 0)
-	submission.SubmitTime = time.Now().Format(time.RFC3339)
+	submission.SubmitTime = time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
 func (submission *Submission) Create() error {

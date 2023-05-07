@@ -34,7 +34,7 @@ func (contest *ContestData) GetContestModel() models.Contest {
 	return models.Contest{
 		Id:        0,
 		Name:      contest.Name,
-		StartTime: contest.StartTime.Format("2006-01-02 15:04:05"),
+		StartTime: contest.StartTime.UTC().Format("2006-01-02 15:04:05"),
 		Duration:  contest.Duration,
 	}
 }
