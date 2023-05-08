@@ -215,6 +215,7 @@ func GetUserIdFromSubmission(submissionId int64) (int64, error) {
 		return 0, err
 	}
 	var userId int64
+	res.Next()
 	err = res.Scan(&userId)
 	return userId, err
 }
