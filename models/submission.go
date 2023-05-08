@@ -66,8 +66,8 @@ func (submission *Submission) Create() error {
 	if err != nil {
 		return err
 	}
-	row, err := databases.DataBase.Exec("INSERT INTO `submission` (`id`, `solution`, `submit_time`, `verdict`, `problem_id`, `user_id`) VALUES (?, ?, ?, ?, ?, ?)",
-		submission.Id, submission.Solution, submission.SubmitTime,
+	row, err := databases.DataBase.Exec("INSERT INTO `submission` (`solution`, `submit_time`, `verdict`, `problem_id`, `user_id`) VALUES (?, ?, ?, ?, ?)",
+		submission.Solution, submission.SubmitTime,
 		sverdict, submission.ProblemId, submission.UserId)
 
 	if err != nil {
@@ -210,7 +210,7 @@ func GetSubmitTime(userId int64, problemId int64, attemptId int64) (time.Time, e
 }
 
 func GetUserIdFromSubmission(submissionId int64) (int64, error) {
-	res, err := databases.DataBase.Query("SELECT `user_id` FROM `submission` WHERE `submission_id`=?", submissionId)
+	res, err := databases.DataBase.Query("SELECT `user_id` FROM `submission` WHERE `id`=?", submissionId)
 	if err != nil {
 		return 0, err
 	}
