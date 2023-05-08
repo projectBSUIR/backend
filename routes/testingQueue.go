@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"fiber-apis/models"
 	"github.com/gofiber/fiber/v2"
 )
@@ -22,10 +23,23 @@ func ExtractSubmissionFromTestingQueue(c *fiber.Ctx) error {
 }
 
 func ExtractFilesForTesting(c *fiber.Ctx) error {
-	var testingInfo models.TestingIdsInfo
-	if err := c.BodyParser(&testingInfo); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+	payload, err := models.GetTestMachineRequestPayload(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
+		})
+	}
+	marshaledPayload, err := json.Marshal(payload)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+	var testingInfo models.TestingIdsInfo
+	err = json.Unmarshal(marshaledPayload, &testingInfo)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
 		})
 	}
 	testingFilesInfo, err := models.GetFilesForTestingSubmission(testingInfo.SubmissionId, testingInfo.ProblemId)

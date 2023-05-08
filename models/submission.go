@@ -157,6 +157,7 @@ func GetFirstSubmissionFromTestingQueue() (TestingIdsInfo, error) {
 		return TestingIdsInfo{}, err
 	}
 	var testingIdsInfo TestingIdsInfo
+	row.Next()
 	err = row.Scan(&testingIdsInfo.SubmissionId, &testingIdsInfo.ProblemId)
 	return testingIdsInfo, err
 }

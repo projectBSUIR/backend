@@ -182,14 +182,27 @@ func StructToMap(obj interface{}) (newMap map[string]interface{}) {
 }
 
 func SetVerdict(c *fiber.Ctx) error {
-	var testerVerdict types.TestingVerdict
-
-	if err := c.BodyParser(&testerVerdict); err != nil {
+	payload, err := models.GetTestMachineRequestPayload(c)
+	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
-	err := models.UpdateSubmissionVerdict(testerVerdict.SubmissionId, StructToMap(testerVerdict.Verdict))
+	marshaledPayload, err := json.Marshal(payload)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+	var testerVerdict types.TestingVerdict
+	err = json.Unmarshal(marshaledPayload, &testerVerdict)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+
+	err = models.UpdateSubmissionVerdict(testerVerdict.SubmissionId, StructToMap(testerVerdict.Verdict))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),

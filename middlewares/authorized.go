@@ -58,7 +58,7 @@ func Admin(c *fiber.Ctx) error {
 }
 
 func TestMachine(c *fiber.Ctx) error {
-	userStatus, err := models.GetUserStatus(c)
+	userStatus, err := models.CheckTestMachine(c)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
