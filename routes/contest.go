@@ -60,7 +60,7 @@ func AddProblem(c *fiber.Ctx) error {
 	files, err := zipper.ExtractAllInOrder(
 		file,
 		[]string{"tests/", "check.cpp", "statements/russian/problem-properties.json"},
-		[]string{"tests.zip", "checker.zip", "problem-properties.json"},
+		[]string{"tests.zip", "checker.cpp", "problem-properties.json"},
 	)
 
 	if err != nil {

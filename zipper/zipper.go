@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
+	"log"
 	"mime/multipart"
 	"os"
 	"strings"
@@ -26,11 +27,17 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	if err != nil {
 		return nil, err
 	}
-	zips := make([]*os.File, len(paths)-1)
-	zipWriters := make([]*zip.Writer, len(paths)-1)
+	var tests *os.File
+	var testsWriter *zip.Writer
+
+	checker, _ := os.CreateTemp(TEMPDIRECTORY, names[1])
+	fileInfo, err := os.Stat(checker.Name())
+	if err != nil {
+		return nil, err
+	}
 
 	propertiesTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[2])
-	fileInfo, err := os.Stat(propertiesTempFile.Name())
+	fileInfo, err = os.Stat(propertiesTempFile.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -44,47 +51,60 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	}
 
 	CloseZips := func() {
-		for i := 0; i < len(zips); i++ {
-			zipWriters[i].Close()
-			os.Remove(zips[i].Name())
-		}
+		testsWriter.Close()
+		os.Remove(tests.Name())
+		os.Remove(checker.Name())
 		os.Remove(propertiesTempFile.Name())
 		os.RemoveAll(TEMPDIRECTORY)
 	}
 
-	for i := 0; i < len(zips); i++ {
-		zips[i], err = os.CreateTemp(TEMPDIRECTORY, names[i])
-		if err != nil {
-			return nil, err
-		}
-		zipWriters[i] = zip.NewWriter(zips[i])
+	tests, err = os.CreateTemp(TEMPDIRECTORY, names[0])
+	if err != nil {
+		return nil, err
 	}
+	testsWriter = zip.NewWriter(tests)
 
 	for _, f := range zipFile.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
-		for pathIndex := 0; pathIndex < len(zips); pathIndex++ {
-			if strings.HasPrefix(f.Name, paths[pathIndex]) {
-				err := CloneFileToZip(f, paths[pathIndex], zipWriters[pathIndex])
-				if err != nil {
-					CloseZips()
-					return nil, err
-				}
+		if strings.HasPrefix(f.Name, paths[0]) {
+			err := CloneFileToZip(f, paths[0], testsWriter)
+			if err != nil {
+				CloseZips()
+				return nil, err
+			}
+		}
+
+		if strings.HasPrefix(f.Name, paths[1]) {
+			err := CloneFileToNoneZip(f, checker)
+			if err != nil {
+				CloseZips()
+				return nil, err
 			}
 		}
 
 		if strings.HasPrefix(f.Name, paths[2]) {
-			CloneFileToNoneZip(f, properties)
+			err := CloneFileToNoneZip(f, properties)
+			if err != nil {
+				CloseZips()
+				return nil, err
+			}
 		}
 	}
 	byteFiles := make([][]byte, len(paths))
-	for i := 0; i < len(zips); i++ {
-		byteFiles[i], err = os.ReadFile(zips[i].Name())
-		if err != nil {
-			return nil, err
-		}
+
+	byteFiles[1], err = os.ReadFile(checker.Name())
+	if err != nil {
+		return nil, err
 	}
+	log.Println(byteFiles[1])
+
+	byteFiles[0], err = os.ReadFile(tests.Name())
+	if err != nil {
+		return nil, err
+	}
+
 	byteFiles[2], err = os.ReadFile(propertiesTempFile.Name())
 	if err != nil {
 		return nil, err
