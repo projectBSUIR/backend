@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"io"
-	"log"
 	"mime/multipart"
 	"os"
 	"strings"
@@ -30,14 +29,22 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	var tests *os.File
 	var testsWriter *zip.Writer
 
-	checker, _ := os.CreateTemp(TEMPDIRECTORY, names[1])
-	fileInfo, err := os.Stat(checker.Name())
+	checkerTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[1])
+	fileInfo, err := os.Stat(checkerTempFile.Name())
 	if err != nil {
 		return nil, err
 	}
 
 	propertiesTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[2])
 	fileInfo, err = os.Stat(propertiesTempFile.Name())
+	if err != nil {
+		return nil, err
+	}
+
+	checker, err := os.OpenFile(checkerTempFile.Name(),
+		os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+		fileInfo.Mode())
+
 	if err != nil {
 		return nil, err
 	}
@@ -53,9 +60,8 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	CloseZips := func() {
 		testsWriter.Close()
 		os.Remove(tests.Name())
-		os.Remove(checker.Name())
+		os.Remove(checkerTempFile.Name())
 		os.Remove(propertiesTempFile.Name())
-		os.RemoveAll(TEMPDIRECTORY)
 	}
 
 	tests, err = os.CreateTemp(TEMPDIRECTORY, names[0])
@@ -94,11 +100,10 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	}
 	byteFiles := make([][]byte, len(paths))
 
-	byteFiles[1], err = os.ReadFile(checker.Name())
+	byteFiles[1], err = os.ReadFile(checkerTempFile.Name())
 	if err != nil {
 		return nil, err
 	}
-	log.Println(byteFiles[1])
 
 	byteFiles[0], err = os.ReadFile(tests.Name())
 	if err != nil {
