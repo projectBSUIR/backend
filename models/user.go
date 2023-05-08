@@ -8,6 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
+	"log"
 	"time"
 )
 
@@ -21,6 +22,12 @@ type User struct {
 
 type UserInfo struct {
 	Id int64 `json:"id"`
+}
+
+type TestMachineBody struct {
+	Login    string      `json:"login"`
+	Password string      `json:"password"`
+	Payload  interface{} `json:"payload"`
 }
 
 func GetJWTClaim(model *User, expirationTime time.Time) token.JWTClaim {
@@ -93,6 +100,31 @@ func (model *User) Register() error {
 		model.ID = id
 	}
 	return nil
+}
+
+func CheckTestMachine(c *fiber.Ctx) (types.UserStatus, error) {
+	var body TestMachineBody
+	if err := c.BodyParser(&body); err != nil {
+		return types.UnAuthorized, err
+	}
+	log.Println(body)
+	user := User{
+		Login:    body.Login,
+		Password: body.Password,
+	}
+	err := user.LogIn()
+	if err != nil {
+		return types.UnAuthorized, err
+	}
+	return user.Status, nil
+}
+
+func GetTestMachineRequestPayload(c *fiber.Ctx) (interface{}, error) {
+	var body TestMachineBody
+	if err := c.BodyParser(&body); err != nil {
+		return 0, err
+	}
+	return body.Payload, nil
 }
 
 func UpdateStatus(userId int64, status types.UserStatus) error {
