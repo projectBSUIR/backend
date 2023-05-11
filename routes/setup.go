@@ -3,9 +3,14 @@ package routes
 import (
 	"fiber-apis/middlewares"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func Setup(app *fiber.App) {
+	app.Use(cors.New(cors.Config{
+		AllowCredentials: true,
+	}))
+
 	app.Post("/login", LoginUserHandler)
 	app.Post("/logout", Logout)
 	app.Post("/register", RegisterHandler)
