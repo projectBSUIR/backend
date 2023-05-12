@@ -3,7 +3,6 @@ package main
 import (
 	"fiber-apis/databases"
 	"fiber-apis/routes"
-	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"log"
@@ -15,11 +14,6 @@ func main() {
 		AppName:   "BetterSolve",
 		BodyLimit: 128 * 1024 * 1024,
 	})
-
-	err := zipper.CreateTempDir()
-	if err != nil {
-		panic(err)
-	}
 
 	file, err := os.OpenFile("logs.txt", os.O_CREATE|os.O_WRONLY, 0666)
 	if err != nil {
