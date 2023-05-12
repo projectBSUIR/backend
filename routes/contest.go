@@ -163,3 +163,38 @@ func ViewProblems(c *fiber.Ctx) error {
 
 	return c.SendStatus(fiber.StatusForbidden)
 }
+
+func ExtractProblemTests(c *fiber.Ctx) error {
+	payload, err := models.GetTestMachineRequestPayload(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	marshaledPayload, err := json.Marshal(payload)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+	var testingInfo models.TestingIdsInfo
+	err = json.Unmarshal(marshaledPayload, &testingInfo)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+	base64Testset, err := models.GetTestset(testingInfo.ProblemId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	binaryTestset, err := types.EncodeBytesToBinary(base64Testset)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).SendString(string(binaryTestset))
+}

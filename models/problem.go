@@ -64,13 +64,13 @@ func GetProblemsFromContest(contestId int) ([]ProblemInfo, error) {
 	return problems, nil
 }
 
-func GetContestId(problemid int64) (int64, error) {
-	res, err := databases.DataBase.Query("SELECT `contest_id` FROM `problem` WHERE `id`=?", problemid)
+func GetTestset(problemId int64) ([]byte, error) {
+	res, err := databases.DataBase.Query("SELECT `testset` FROM `problem` WHERE `id`=?", problemId)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	var contestId int64
+	var testset []byte
 	res.Next()
-	err = res.Scan(&contestId)
-	return contestId, err
+	err = res.Scan(&testset)
+	return testset, err
 }

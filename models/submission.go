@@ -31,7 +31,6 @@ type TestingIdsInfo struct {
 
 type TestingFilesInfo struct {
 	Solution          []byte    `json:"solution"`
-	Testset           []byte    `json:"testset"`
 	Checker           []byte    `json:"checker"`
 	ProblemProperties fiber.Map `json:"problem_properties"`
 }
@@ -162,7 +161,7 @@ func GetFilesForTestingSubmission(submissionId int64, problemId int64) (TestingF
 		return TestingFilesInfo{}, err
 	}
 
-	row, err = databases.DataBase.Query("SELECT `testset`, `checker`, `problem_properties` FROM `problem` WHERE `id`= ?", problemId)
+	row, err = databases.DataBase.Query("SELECT `checker`, `problem_properties` FROM `problem` WHERE `id`= ?", problemId)
 	if err != nil {
 		return TestingFilesInfo{}, err
 	}
@@ -170,7 +169,7 @@ func GetFilesForTestingSubmission(submissionId int64, problemId int64) (TestingF
 	row.Next()
 	var sproperties string
 
-	err = row.Scan(&solutionInfo.Testset, &solutionInfo.Checker, &sproperties)
+	err = row.Scan(&solutionInfo.Checker, &sproperties)
 	if err != nil {
 		return TestingFilesInfo{}, err
 	}
