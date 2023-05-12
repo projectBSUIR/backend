@@ -77,7 +77,6 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 			CloneFileToNoneZip(f, properties)
 		}
 	}
-	CloseZips()
 	byteFiles := make([][]byte, len(paths))
 	for i := 0; i < len(zips); i++ {
 		byteFiles[i], err = os.ReadFile(zips[i].Name())
@@ -89,6 +88,7 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	if err != nil {
 		return nil, err
 	}
+	CloseZips()
 	return byteFiles, nil
 }
 
