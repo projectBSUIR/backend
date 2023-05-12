@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fiber-apis/databases"
 	"github.com/gofiber/fiber/v2"
+	"log"
 )
 
 type Problem struct {
@@ -72,5 +73,6 @@ func GetTestset(problemId int64) ([]byte, error) {
 	var testset []byte
 	res.Next()
 	err = res.Scan(&testset)
+	log.Println(len(testset))
 	return testset, err
 }

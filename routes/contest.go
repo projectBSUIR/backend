@@ -1,11 +1,13 @@
 package routes
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fiber-apis/models"
 	"fiber-apis/types"
 	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
+	"log"
 	"strconv"
 	"time"
 )
@@ -60,7 +62,7 @@ func AddProblem(c *fiber.Ctx) error {
 	files, err := zipper.ExtractAllInOrder(
 		file,
 		[]string{"tests/", "check.cpp", "statements/russian/problem-properties.json"},
-		[]string{"tests.zip", "checker.cpp", "problem-properties.json"},
+		[]string{"tests.zip", "checker.zip", "problem-properties.json"},
 	)
 
 	if err != nil {
@@ -76,6 +78,8 @@ func AddProblem(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
+
+	log.Println(files[0])
 
 	problem := problemData.GetProblemModel(
 		files[0],
@@ -184,17 +188,14 @@ func ExtractProblemTests(c *fiber.Ctx) error {
 			"message": err,
 		})
 	}
-	base64Testset, err := models.GetTestset(testingInfo.ProblemId)
+	testset, err := models.GetTestset(testingInfo.ProblemId)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
 	}
-	binaryTestset, err := types.EncodeBytesToBinary(base64Testset)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": err.Error(),
-		})
-	}
-	return c.Status(fiber.StatusOK).SendString(string(binaryTestset))
+
+	//log.Println(testset)
+
+	return c.Status(fiber.StatusOK).SendString(hex.EncodeToString(testset))
 }
