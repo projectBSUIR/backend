@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fiber-apis/models"
 	"github.com/gofiber/fiber/v2"
@@ -49,9 +48,5 @@ func ExtractFilesForTesting(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"solution":           testingFilesInfo.Solution,
-		"checker":            hex.EncodeToString(testingFilesInfo.Checker),
-		"problem-properties": testingFilesInfo.ProblemProperties,
-	})
+	return c.Status(fiber.StatusOK).JSON(testingFilesInfo)
 }

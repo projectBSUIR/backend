@@ -1,13 +1,11 @@
 package routes
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fiber-apis/models"
 	"fiber-apis/types"
 	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
-	"log"
 	"strconv"
 	"time"
 )
@@ -78,8 +76,6 @@ func AddProblem(c *fiber.Ctx) error {
 			"message": err.Error(),
 		})
 	}
-
-	log.Println(files[0])
 
 	problem := problemData.GetProblemModel(
 		files[0],
@@ -197,5 +193,5 @@ func ExtractProblemTests(c *fiber.Ctx) error {
 
 	//log.Println(testset)
 
-	return c.Status(fiber.StatusOK).SendString(hex.EncodeToString(testset))
+	return c.Status(fiber.StatusOK).SendString(string(testset))
 }
