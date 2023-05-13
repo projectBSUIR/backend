@@ -26,16 +26,24 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 	if err != nil {
 		return nil, err
 	}
-	var tests *os.File
-	var testsWriter *zip.Writer
+	var testsZip *os.File
+	var zipWriter *zip.Writer
 
-	checkerTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[1])
-	fileInfo, err := os.Stat(checkerTempFile.Name())
+	propertiesTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[2])
+	fileInfo, err := os.Stat(propertiesTempFile.Name())
 	if err != nil {
 		return nil, err
 	}
 
-	propertiesTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[2])
+	properties, err := os.OpenFile(propertiesTempFile.Name(),
+		os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+		fileInfo.Mode())
+
+	if err != nil {
+		return nil, err
+	}
+
+	checkerTempFile, _ := os.CreateTemp(TEMPDIRECTORY, names[1])
 	fileInfo, err = os.Stat(propertiesTempFile.Name())
 	if err != nil {
 		return nil, err
@@ -49,35 +57,33 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 		return nil, err
 	}
 
-	properties, err := os.OpenFile(propertiesTempFile.Name(),
-		os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
-		fileInfo.Mode())
-
-	if err != nil {
-		return nil, err
-	}
-
 	CloseZips := func() {
-		testsWriter.Close()
-		os.Remove(tests.Name())
+		properties.Close()
+		propertiesTempFile.Close()
+		checker.Close()
+		checkerTempFile.Close()
+		nameFile := testsZip.Name()
+		testsZip.Close()
+		os.Remove(nameFile)
 		os.Remove(checkerTempFile.Name())
 		os.Remove(propertiesTempFile.Name())
 	}
 
-	tests, err = os.CreateTemp(TEMPDIRECTORY, names[0])
+	defer CloseZips()
+
+	testsZip, err = os.CreateTemp(TEMPDIRECTORY, names[0])
 	if err != nil {
 		return nil, err
 	}
-	testsWriter = zip.NewWriter(tests)
+	zipWriter = zip.NewWriter(testsZip)
 
 	for _, f := range zipFile.File {
 		if f.FileInfo().IsDir() {
 			continue
 		}
 		if strings.HasPrefix(f.Name, paths[0]) {
-			err := CloneFileToZip(f, paths[0], testsWriter)
+			err := CloneFileToZip(f, paths[0], zipWriter)
 			if err != nil {
-				CloseZips()
 				return nil, err
 			}
 		}
@@ -85,36 +91,31 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 		if strings.HasPrefix(f.Name, paths[1]) {
 			err := CloneFileToNoneZip(f, checker)
 			if err != nil {
-				CloseZips()
 				return nil, err
 			}
 		}
 
 		if strings.HasPrefix(f.Name, paths[2]) {
-			err := CloneFileToNoneZip(f, properties)
+			err = CloneFileToNoneZip(f, properties)
 			if err != nil {
-				CloseZips()
 				return nil, err
 			}
 		}
 	}
 	byteFiles := make([][]byte, len(paths))
-
+	zipWriter.Close()
+	byteFiles[0], err = os.ReadFile(testsZip.Name())
+	if err != nil {
+		return nil, err
+	}
 	byteFiles[1], err = os.ReadFile(checkerTempFile.Name())
 	if err != nil {
 		return nil, err
 	}
-
-	byteFiles[0], err = os.ReadFile(tests.Name())
-	if err != nil {
-		return nil, err
-	}
-
 	byteFiles[2], err = os.ReadFile(propertiesTempFile.Name())
 	if err != nil {
 		return nil, err
 	}
-	CloseZips()
 	return byteFiles, nil
 }
 
@@ -123,12 +124,12 @@ func CloneFileToNoneZip(f *zip.File, targetFile *os.File) error {
 	if err != nil {
 		return err
 	}
-	defer fileReader.Close()
 
 	if _, err := io.Copy(targetFile, fileReader); err != nil {
 		return err
 	}
 
+	fileReader.Close()
 	return nil
 }
 
@@ -141,8 +142,11 @@ func CloneFileToZip(f *zip.File, path string, zipFileWriter *zip.Writer) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
 	nameFile, _ := strings.CutPrefix(f.Name, path)
+	if err != nil {
+		return err
+	}
+
 	zipFile, err := zipFileWriter.Create(nameFile)
 	if err != nil {
 		return err
@@ -152,11 +156,6 @@ func CloneFileToZip(f *zip.File, path string, zipFileWriter *zip.Writer) error {
 	if err != nil {
 		return err
 	}
+	file.Close()
 	return nil
-}
-
-func CreateTempDir() error {
-	var err error
-	TEMPDIRECTORY, err = os.MkdirTemp(".", "temp")
-	return err
 }

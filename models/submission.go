@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"fiber-apis/databases"
 	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
@@ -32,7 +31,6 @@ type TestingIdsInfo struct {
 
 type TestingFilesInfo struct {
 	Solution          []byte    `json:"solution"`
-	Testset           []byte    `json:"testset"`
 	Checker           []byte    `json:"checker"`
 	ProblemProperties fiber.Map `json:"problem_properties"`
 }
@@ -45,24 +43,13 @@ func CreateVerdict(status string, time int64, memory int64) types.VerdictInfo {
 	}
 }
 
-func ConvertMapToString(verdict any) (string, error) {
-	ret, err := json.Marshal(verdict)
-	return string(ret), err
-}
-
-func ConvertToMap(sverdict string) fiber.Map {
-	var verdict fiber.Map
-	_ = json.Unmarshal([]byte(sverdict), &verdict)
-	return verdict
-}
-
 func (submission *Submission) SetDefaultValues() {
 	submission.Verdict = CreateVerdict("Pending", 0, 0)
 	submission.SubmitTime = time.Now().UTC().Format("2006-01-02 15:04:05")
 }
 
 func (submission *Submission) Create() error {
-	sverdict, err := ConvertMapToString(submission.Verdict)
+	sverdict, err := types.ConvertMapToString(submission.Verdict)
 	if err != nil {
 		return err
 	}
@@ -104,7 +91,7 @@ func GetSubmissionsByProblem(userId int64, problemId int64) ([]SubmissionInfo, e
 		if err != nil {
 			return nil, err
 		}
-		submission.Verdict = ConvertToMap(stringVerdict)
+		submission.Verdict = types.ConvertToMap(stringVerdict)
 
 		submission.ProblemId = problemId
 		submission.UserId = userId
@@ -124,7 +111,7 @@ func GetSubmissionsByContestId(contestId int64) ([]SubmissionInfo, error) {
 		var submission SubmissionInfo
 		var sverdict string
 		err := rows.Scan(&submission.Id, &submission.SubmitTime, &sverdict, &submission.ProblemId, &submission.UserId)
-		submission.Verdict = ConvertToMap(sverdict)
+		submission.Verdict = types.ConvertToMap(sverdict)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +122,7 @@ func GetSubmissionsByContestId(contestId int64) ([]SubmissionInfo, error) {
 }
 
 func UpdateSubmissionVerdict(submissionId int64, newVerdict fiber.Map) error {
-	sverdict, err := ConvertMapToString(newVerdict)
+	sverdict, err := types.ConvertMapToString(newVerdict)
 	if err != nil {
 		return err
 	}
@@ -174,7 +161,7 @@ func GetFilesForTestingSubmission(submissionId int64, problemId int64) (TestingF
 		return TestingFilesInfo{}, err
 	}
 
-	row, err = databases.DataBase.Query("SELECT `testset`, `checker`, `problem_properties` FROM `problem` WHERE `id`= ?", problemId)
+	row, err = databases.DataBase.Query("SELECT `checker`, `problem_properties` FROM `problem` WHERE `id`= ?", problemId)
 	if err != nil {
 		return TestingFilesInfo{}, err
 	}
@@ -182,12 +169,12 @@ func GetFilesForTestingSubmission(submissionId int64, problemId int64) (TestingF
 	row.Next()
 	var sproperties string
 
-	err = row.Scan(&solutionInfo.Testset, &solutionInfo.Checker, &sproperties)
+	err = row.Scan(&solutionInfo.Checker, &sproperties)
 	if err != nil {
 		return TestingFilesInfo{}, err
 	}
 
-	solutionInfo.ProblemProperties = ConvertToMap(sproperties)
+	solutionInfo.ProblemProperties = types.ConvertToMap(sproperties)
 	return solutionInfo, nil
 }
 
