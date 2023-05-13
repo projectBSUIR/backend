@@ -65,6 +65,7 @@ func ExtractAllInOrder(file multipart.File, paths, names []string) ([][]byte, er
 		nameFile := testsZip.Name()
 		testsZip.Close()
 		os.Remove(nameFile)
+		os.Remove(checkerTempFile.Name())
 		os.Remove(propertiesTempFile.Name())
 	}
 
