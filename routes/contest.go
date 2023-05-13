@@ -60,7 +60,7 @@ func AddProblem(c *fiber.Ctx) error {
 	files, err := zipper.ExtractAllInOrder(
 		file,
 		[]string{"tests/", "check.cpp", "statements/russian/problem-properties.json"},
-		[]string{"tests.zip", "checker.cpp", "problem-properties.json"},
+		[]string{"tests.zip", "checker.zip", "problem-properties.json"},
 	)
 
 	if err != nil {
@@ -162,4 +162,36 @@ func ViewProblems(c *fiber.Ctx) error {
 	}
 
 	return c.SendStatus(fiber.StatusForbidden)
+}
+
+func ExtractProblemTests(c *fiber.Ctx) error {
+	payload, err := models.GetTestMachineRequestPayload(c)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	marshaledPayload, err := json.Marshal(payload)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+	var testingInfo models.TestingIdsInfo
+	err = json.Unmarshal(marshaledPayload, &testingInfo)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"message": err,
+		})
+	}
+	testset, err := models.GetTestset(testingInfo.ProblemId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+
+	//log.Println(testset)
+
+	return c.Status(fiber.StatusOK).SendString(string(testset))
 }
