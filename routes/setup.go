@@ -8,6 +8,8 @@ import (
 
 func Setup(app *fiber.App) {
 	app.Use(cors.New(cors.Config{
+		AllowHeaders:     "Origin, Accept, Content-Type, Content-Length, Accept-Encoding, Authorization",
+		AllowOrigins:     "http://localhost:3000",
 		AllowCredentials: true,
 	}))
 
