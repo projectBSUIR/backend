@@ -26,6 +26,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
+	defer databases.DataBase.Close()
 
 	app.Use(logger.New())
 	routes.Setup(app)
