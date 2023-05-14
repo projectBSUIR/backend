@@ -159,6 +159,7 @@ func GetUserProblemResult(userId int64, problemId int64) (int8, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer rows.Close()
 	count := 0
 	var result int8 = 0
 	for rows.Next() {

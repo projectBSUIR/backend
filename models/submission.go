@@ -83,6 +83,7 @@ func GetSubmissionsByProblem(userId int64, problemId int64) ([]SubmissionInfo, e
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	submissions := make([]SubmissionInfo, 0)
 	for rows.Next() {
 		var submission SubmissionInfo
@@ -106,6 +107,7 @@ func GetSubmissionsByContestId(contestId int64) ([]SubmissionInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	submissions := make([]SubmissionInfo, 0)
 	for rows.Next() {
 		var submission SubmissionInfo
@@ -143,6 +145,7 @@ func GetFirstSubmissionFromTestingQueue() (TestingIdsInfo, error) {
 	if err != nil {
 		return TestingIdsInfo{}, err
 	}
+	defer row.Close()
 	var testingIdsInfo TestingIdsInfo
 	row.Next()
 	err = row.Scan(&testingIdsInfo.SubmissionId, &testingIdsInfo.ProblemId)
@@ -154,6 +157,7 @@ func GetFilesForTestingSubmission(submissionId int64, problemId int64) (TestingF
 	if err != nil {
 		return TestingFilesInfo{}, err
 	}
+	defer row.Close()
 	var solutionInfo TestingFilesInfo
 	row.Next()
 	err = row.Scan(&solutionInfo.Solution)
@@ -183,6 +187,7 @@ func GetSubmitTime(userId int64, problemId int64, attemptId int64) (time.Time, e
 	if err != nil {
 		return time.Now(), err
 	}
+	defer res.Close()
 	var startTime time.Time
 	var sstartTime string
 	for i := int64(0); i < attemptId; i++ {
@@ -201,6 +206,7 @@ func GetUserIdFromSubmission(submissionId int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer res.Close()
 	var userId int64
 	res.Next()
 	err = res.Scan(&userId)

@@ -163,6 +163,7 @@ func GetLoginById(userId int64) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	defer log.Close()
 	log.Next()
 	err = log.Scan(&login)
 	if err != nil {

@@ -49,6 +49,7 @@ func GetProblemsFromContest(contestId int) ([]ProblemInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	problems := make([]ProblemInfo, 0)
 	for rows.Next() {
 		var problem Problem
@@ -70,6 +71,7 @@ func GetTestset(problemId int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
 	var testset []byte
 	res.Next()
 	err = res.Scan(&testset)

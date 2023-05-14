@@ -82,10 +82,11 @@ func (contestResult *ContestResult) GetContestResultInfo() error {
 func (contestResult *ContestResult) UpdateContestResultInfo() error {
 	_, err := databases.DataBase.Exec("UPDATE `contestResult` SET `penalty`=?, `solvedTasks`=? WHERE `id`=?", contestResult.Penalty, contestResult.SolvedTasks, contestResult.Id)
 	if err != nil {
-		_, nerr := databases.DataBase.Exec("ROLLBACK")
+		row, nerr := databases.DataBase.Query("ROLLBACK")
 		if nerr != nil {
 			return nerr
 		}
+		defer row.Close()
 		return err
 	}
 	return nil
@@ -111,6 +112,7 @@ func GetContestIdByProblemId(problemId int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer row.Close()
 	var contestId int64
 	row.Next()
 	err = row.Scan(&contestId)
