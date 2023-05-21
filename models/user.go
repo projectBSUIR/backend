@@ -8,7 +8,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v4"
-	"log"
 	"time"
 )
 
@@ -50,6 +49,7 @@ func (model *User) LogIn() error {
 	if err != nil {
 		return err
 	}
+	defer res.Close()
 	var count int = 0
 	var status string
 	for res.Next() {
@@ -70,6 +70,7 @@ func (model *User) Register() error {
 	if err != nil {
 		return err
 	}
+	defer res.Close()
 	var count int
 	res.Next()
 	err = res.Scan(&count)
@@ -107,7 +108,6 @@ func CheckTestMachine(c *fiber.Ctx) (types.UserStatus, error) {
 	if err := c.BodyParser(&body); err != nil {
 		return types.UnAuthorized, err
 	}
-	log.Println(body)
 	user := User{
 		Login:    body.Login,
 		Password: body.Password,

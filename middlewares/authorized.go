@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fiber-apis/models"
+	"fiber-apis/token"
 	"fiber-apis/types"
 	"github.com/gofiber/fiber/v2"
 )
@@ -9,6 +10,9 @@ import (
 func Participant(c *fiber.Ctx) error {
 	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
+		if err.Error() == token.JWTErrTokenExpired.Error() {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
@@ -26,6 +30,9 @@ func Participant(c *fiber.Ctx) error {
 func Coach(c *fiber.Ctx) error {
 	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
+		if err.Error() == token.JWTErrTokenExpired.Error() {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
@@ -43,6 +50,9 @@ func Coach(c *fiber.Ctx) error {
 func Admin(c *fiber.Ctx) error {
 	userStatus, err := models.GetUserStatus(c)
 	if err != nil {
+		if err.Error() == token.JWTErrTokenExpired.Error() {
+			return c.SendStatus(fiber.StatusUnauthorized)
+		}
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"message": err.Error(),
 		})
