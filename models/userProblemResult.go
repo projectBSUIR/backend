@@ -31,6 +31,7 @@ func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, er
 		return result, err
 	}
 	res, err := databases.DataBase.Query("SELECT * FROM `userProblemResult` WHERE `user_id` = ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id` = ?)", UserId, ContestId)
+	defer res.Close()
 	if err != nil {
 		_, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
@@ -50,10 +51,11 @@ func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, er
 
 func GetProblemsStatus(userId int64, contestId int64) ([]ProblemResultInfo, error) {
 	var result []ProblemResultInfo
-	res, err := databases.DataBase.Query("SELECT `result`, `attempts_count`, `last_attempt`, `problem_id` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
+	res, err := databases.DataBase.Query("SELECT `result`, `attempts_count`, `last_attempt`, `problem_id` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
 	for res.Next() {
 		var r ProblemResultInfo
 		err := res.Scan(&r.Result, &r.AttemptsCount, &r.LastAttempt, &r.ProblemId)
@@ -70,6 +72,7 @@ func (userProblemResult *UserProblemResult) Exists() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer res.Close()
 	var count int64
 	for res.Next() {
 		count++
@@ -128,6 +131,7 @@ func GetAttemptsCount(userId int64, problemId int64) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer rows.Close()
 	var attemptsCount int64
 	rows.Next()
 	rows.Scan(&attemptsCount)
