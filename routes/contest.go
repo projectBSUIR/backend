@@ -143,25 +143,27 @@ func ViewProblems(c *fiber.Ctx) error {
 		})
 	}
 
-	userStatus, err := models.GetUserStatus(c)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": err.Error(),
-		})
-	}
-	if !contest.NotStarted() || userStatus == types.Admin {
-		problems, err := models.GetProblemsFromContest(contestId)
+	if contest.NotStarted() {
+		userStatus, err := models.GetUserStatus(c)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": err.Error(),
 			})
 		}
-		return c.Status(fiber.StatusOK).JSON(fiber.Map{
-			"problems": problems,
-		})
+		if userStatus != types.Admin {
+			return c.SendStatus(fiber.StatusForbidden)
+		}
 	}
 
-	return c.SendStatus(fiber.StatusForbidden)
+	problems, err := models.GetProblemsFromContest(contestId)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"message": err.Error(),
+		})
+	}
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"problems": problems,
+	})
 }
 
 func ExtractProblemTests(c *fiber.Ctx) error {
