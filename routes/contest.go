@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fiber-apis/models"
+	"fiber-apis/token"
 	"fiber-apis/types"
 	"fiber-apis/zipper"
 	"github.com/gofiber/fiber/v2"
@@ -146,6 +147,9 @@ func ViewProblems(c *fiber.Ctx) error {
 	if contest.NotStarted() {
 		userStatus, err := models.GetUserStatus(c)
 		if err != nil {
+			if err.Error() == token.JWTErrTokenExpired.Error() {
+				return c.SendStatus(fiber.StatusUnauthorized)
+			}
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": err.Error(),
 			})
