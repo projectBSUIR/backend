@@ -21,6 +21,7 @@ type ProblemResultInfo struct {
 	Result        int64        `json:"result"`
 	AttemptsCount int64        `json:"attempts_count"`
 	LastAttempt   sql.NullTime `json:"last_attempt,omitempty"`
+	ProblemId     int64        `json:"problem_id"`
 }
 
 func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, error) {
@@ -49,13 +50,13 @@ func GetResultsFromContest(ContestId int, c *fiber.Ctx) ([]UserProblemResult, er
 
 func GetProblemsStatus(userId int64, contestId int64) ([]ProblemResultInfo, error) {
 	var result []ProblemResultInfo
-	res, err := databases.DataBase.Query("SELECT `result`, `attempts_count`, `last_attempt` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
+	res, err := databases.DataBase.Query("SELECT `result`, `attempts_count`, `last_attempt`, `problem_id` FROM `userProblemResult` WHERE `user_id`= ? AND `problem_id` IN (SELECT `problem_id` FROM `problem` WHERE `contest_id`= ?)", userId, contestId)
 	if err != nil {
 		return nil, err
 	}
 	for res.Next() {
 		var r ProblemResultInfo
-		err := res.Scan(&r.Result, &r.AttemptsCount, &r.LastAttempt)
+		err := res.Scan(&r.Result, &r.AttemptsCount, &r.LastAttempt, &r.ProblemId)
 		if err != nil {
 			return nil, err
 		}
