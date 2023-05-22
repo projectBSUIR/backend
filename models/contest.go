@@ -102,7 +102,7 @@ func (contest *Contest) FetchContest(contestId int) error {
 }
 
 func FetchAllContestsForAuthor(userId int64) ([]ContestInfo, error) {
-	rows, err := databases.DataBase.Query("SELECT `id`, `name` FROM `contest` WHERE `id` IN (SELECT `contest_id` FROM `contestAuthor` WHERE `user_id`=?)", userId)
+	rows, err := databases.DataBase.Query("SELECT `id`, `contest_name` FROM `contest` WHERE `id` IN (SELECT `contest_id` FROM `contestAuthor` WHERE `user_id`=?)", userId)
 	if err != nil {
 		return nil, err
 	}
