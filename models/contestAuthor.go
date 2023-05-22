@@ -37,6 +37,7 @@ func (contestAuthor *ContestAuthor) IsAuthorOfContest() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 	var count int
 	rows.Next()
 	rows.Scan(&count)
@@ -51,19 +52,21 @@ func (contestAuthor *ContestAuthor) Create() error {
 	row, err := databases.DataBase.Exec("INSERT INTO `contestAuthor` (`user_id`, `contest_id`) VALUES (?, ?)", contestAuthor.UserId, contestAuthor.ContestId)
 	if err != nil {
 		var prevErr error = err
-		_, err := databases.DataBase.Query("ROLLBACK")
+		row, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
+		defer row.Close()
 		return prevErr
 	}
 	id, err := row.LastInsertId()
 	if err != nil {
 		var prevErr error = err
-		_, err := databases.DataBase.Query("ROLLBACK")
+		row, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return err
 		}
+		defer row.Close()
 		return prevErr
 	}
 	contestAuthor.Id = id

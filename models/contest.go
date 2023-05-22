@@ -34,29 +34,32 @@ func (contest *Contest) Create(c *fiber.Ctx) (ContestInfo, error) {
 		contest.Name, contest.StartTime, contest.Duration)
 	if err != nil {
 		prevErr := err
-		_, err := databases.DataBase.Query("ROLLBACK")
+		row, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return ContestInfo{}, err
 		}
+		defer row.Close()
 		return ContestInfo{}, prevErr
 	}
 	id, err := row.LastInsertId()
 	if err != nil {
 		prevErr := err
-		_, err := databases.DataBase.Query("ROLLBACK")
+		row, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return ContestInfo{}, err
 		}
+		defer row.Close()
 		return ContestInfo{}, prevErr
 	}
 	contest.Id = id
 	err = SetAuthorOfContest(contest.Id, c)
 	if err != nil {
 		prevErr := err
-		_, err := databases.DataBase.Query("ROLLBACK")
+		row, err := databases.DataBase.Query("ROLLBACK")
 		if err != nil {
 			return ContestInfo{}, err
 		}
+		defer row.Close()
 		return ContestInfo{}, prevErr
 	}
 	return ContestInfo{Id: contest.Id, Name: contest.Name}, nil
@@ -65,12 +68,14 @@ func (contest *Contest) Create(c *fiber.Ctx) (ContestInfo, error) {
 func FetchAllContests() ([]Contest, error) {
 	rows, err := databases.DataBase.Query("SELECT * FROM `contest`")
 	if err != nil {
-		_, err := databases.DataBase.Query("ROLLBACK")
-		if err != nil {
-			return nil, err
+		row, nerr := databases.DataBase.Query("ROLLBACK")
+		if nerr != nil {
+			return nil, nerr
 		}
+		defer row.Close()
 		return nil, err
 	}
+	defer rows.Close()
 	contests := make([]Contest, 0)
 	for rows.Next() {
 		var contest Contest
@@ -85,6 +90,7 @@ func (contest *Contest) FetchContest(contestId int) error {
 	if err != nil {
 		return err
 	}
+	defer row.Close()
 
 	row.Next()
 	err = row.Scan(&contest.Name, &contest.StartTime, &contest.Duration)
@@ -96,10 +102,11 @@ func (contest *Contest) FetchContest(contestId int) error {
 }
 
 func FetchAllContestsForAuthor(userId int64) ([]ContestInfo, error) {
-	rows, err := databases.DataBase.Query("SELECT `id`, `name` FROM `contest` WHERE `id` IN (SELECT `contest_id` FROM `contestAuthor` WHERE `user_id`=?)", userId)
+	rows, err := databases.DataBase.Query("SELECT `id`, `contest_name` FROM `contest` WHERE `id` IN (SELECT `contest_id` FROM `contestAuthor` WHERE `user_id`=?)", userId)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	var contests []ContestInfo
 	for rows.Next() {
 		var contestInfo ContestInfo
@@ -118,6 +125,7 @@ func GetParticipantsIds(contestId int64) ([]int64, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer res.Close()
 	for res.Next() {
 		var id int64
 		err := res.Scan(&id)
@@ -134,6 +142,7 @@ func GetStartTimeOfContest(contestId int64) (time.Time, error) {
 	if err != nil {
 		return time.Now(), err
 	}
+	defer res.Close()
 	var startTime time.Time
 	var sstartTime string
 	res.Next()

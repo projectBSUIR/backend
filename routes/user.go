@@ -22,13 +22,13 @@ func RegisterHandler(c *fiber.Ctx) error {
 	var user UserResponse
 
 	if err := c.BodyParser(&user); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
 	userModel := user.GetUserModel()
 	err := userModel.Register()
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	return Authentificate(c, &userModel)
@@ -38,13 +38,13 @@ func LoginUserHandler(c *fiber.Ctx) error {
 	var user UserResponse
 
 	if err := c.BodyParser(&user); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
 	}
 	userModel := user.GetUserModel()
 	err := userModel.LogIn()
 
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	return Authentificate(c, &userModel)

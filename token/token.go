@@ -22,10 +22,9 @@ type JWTClaim struct {
 
 func SetRefreshTokenCookie(c *fiber.Ctx, refreshToken string, expiresAt time.Time) {
 	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Expires:  expiresAt,
-		HTTPOnly: true,
+		Name:    "refresh_token",
+		Value:   refreshToken,
+		Expires: expiresAt,
 	})
 }
 
